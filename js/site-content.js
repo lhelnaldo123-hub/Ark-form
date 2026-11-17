@@ -4,7 +4,7 @@ const esc = t => String(t || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '
   try { s = (await db.collection('settings').doc('site').get()).data() || {}; } catch (e) {}
   if (s.about) $('#aboutText').textContent = s.about;
   const c = [s.address, s.phone, s.email, s.hours].filter(Boolean);
-  if (c.length) $('#contactInfo').textContent = c.join(' · ');
+  if (c.length) { $('#contactInfo').textContent = c.join(' · '); $('#fContact').textContent = c.join(' · '); }
   const pol = [['FAQs', s.faq], ['Privacy Policy', s.privacy], ['Terms & Conditions', s.terms], ['Return / Exchange Policy', s.returns]].filter(x => x[1]);
   if (pol.length) $('#faqBox').innerHTML = pol.map(x => `<h4>${x[0]}</h4><p style="white-space:pre-wrap">${esc(x[1])}</p>`).join('');
   try {
