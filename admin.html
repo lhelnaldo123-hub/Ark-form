@@ -1,29 +1,68 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ARK Admin</title><link rel="stylesheet" href="css/style.css"></head><body>
 <header><b>ARK Admin Panel</b><a style="color:#fff" href="index.html">View site</a></header><main>
-<div id="login" class="card"><h3>Admin Login</h3><input id="em" placeholder="Email"><input id="pw" type="password" placeholder="Password"><button onclick="doLogin()">Login</button></div>
-<div id="panel" style="display:none"><button onclick="firebase.auth().signOut()">Logout</button>
-<h3>Dashboard</h3><div class="grid" id="stats"></div>
-<h3>Add Product</h3><form class="card" onsubmit="add(event,'products')"><input name="name" placeholder="Name" required><input name="category" placeholder="Category"><input name="price" type="number" placeholder="Price" required><input name="image" placeholder="Image URL"><textarea name="description" placeholder="Description"></textarea><button>Save</button></form>
-<h3>Add Package</h3><form class="card" onsubmit="add(event,'packages')"><input name="name" placeholder="Package name" required><input name="items" placeholder="Included items"><input name="normal" type="number" placeholder="Normal price"><input name="price" type="number" placeholder="Package price"><button>Save</button></form>
-<h3>Add Offer / Coupon</h3><form class="card" onsubmit="add(event,'offers')"><input name="title" placeholder="Title" required><input name="code" placeholder="Coupon code"><input name="details" placeholder="Details"><select name="type"><option value="percent">Percent %</option><option value="fixed">Fixed amount (Rs)</option></select><input name="value" type="number" placeholder="Discount value"><input name="min" type="number" placeholder="Minimum spend"><label class="tag">Expiry date</label><input name="expiry" type="date"><button>Save</button></form>
-<h3>Orders</h3><table id="orders"></table><h3>Enquiries</h3><table id="enq"></table><h3>Customers</h3><table id="cust"></table>
-<h3>Site Content</h3><form id="sf" class="card" onsubmit="saveS(event)"><textarea name="about" placeholder="About us"></textarea><input name="address" placeholder="Shop address"><input name="phone" placeholder="Phone / WhatsApp"><input name="email" placeholder="Business email"><input name="hours" placeholder="Opening hours"><textarea name="faq" placeholder="FAQs"></textarea><textarea name="privacy" placeholder="Privacy Policy"></textarea><textarea name="terms" placeholder="Terms & Conditions"></textarea><textarea name="returns" placeholder="Return / Exchange Policy"></textarea><button>Save content</button></form>
-<h3>Reviews</h3><table id="revs"></table><h3>Reports</h3><div id="rep" class="grid"></div><br><button onclick="csv()">Download orders CSV</button></div></main>
+<div id="login" class="card"><h3>Admin Login</h3><input id="em" type="email" placeholder="Email"><input id="pw" type="password" placeholder="Password"><button onclick="doLogin()">Login</button>
+<p id="loginMsg" style="color:#b00020"></p></div>
+<div id="panel" style="display:none">
+<p><b id="who"></b> <button onclick="firebase.auth().signOut()">Logout</button></p>
+<div data-sec="dashboard"><h3>Dashboard</h3><div class="grid" id="stats"></div></div>
+<div data-sec="products"><h3>Add Product</h3><form class="card" onsubmit="add(event,'products')"><input name="name" placeholder="Name" required><input name="category" placeholder="Category"><input name="price" type="number" placeholder="Price" required><input name="image" placeholder="Image URL"><textarea name="description" placeholder="Description"></textarea><button>Save</button></form></div>
+<div data-sec="packages"><h3>Add Package</h3><form class="card" onsubmit="add(event,'packages')"><input name="name" placeholder="Package name" required><input name="items" placeholder="Included items"><input name="normal" type="number" placeholder="Normal price"><input name="price" type="number" placeholder="Package price"><button>Save</button></form></div>
+<div data-sec="offers"><h3>Add Offer / Coupon</h3><form class="card" onsubmit="add(event,'offers')"><input name="title" placeholder="Title" required><input name="code" placeholder="Coupon code"><input name="details" placeholder="Details"><select name="type"><option value="percent">Percent %</option><option value="fixed">Fixed amount (Rs)</option></select><input name="value" type="number" placeholder="Discount value"><input name="min" type="number" placeholder="Minimum spend"><label class="tag">Expiry date</label><input name="expiry" type="date"><button>Save</button></form></div>
+<div data-sec="orders"><h3>Orders</h3><table id="orders"></table></div>
+<div data-sec="enquiries"><h3>Enquiries</h3><table id="enq"></table></div>
+<div data-sec="customers"><h3>Customers</h3><table id="cust"></table></div>
+<div data-sec="content"><h3>Site Content</h3><form id="sf" class="card" onsubmit="saveS(event)"><textarea name="about" placeholder="About us"></textarea><input name="address" placeholder="Shop address"><input name="phone" placeholder="Phone / WhatsApp"><input name="email" placeholder="Business email"><input name="hours" placeholder="Opening hours"><textarea name="faq" placeholder="FAQs"></textarea><textarea name="privacy" placeholder="Privacy Policy"></textarea><textarea name="terms" placeholder="Terms & Conditions"></textarea><textarea name="returns" placeholder="Return / Exchange Policy"></textarea><button>Save content</button></form></div>
+<div data-sec="reviews"><h3>Reviews</h3><table id="revs"></table></div>
+<div data-sec="reports"><h3>Reports</h3><div id="rep" class="grid"></div><br><button onclick="csv()">Download orders CSV</button></div>
+</div></main>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="js/firebase-config.js"></script><script>
 firebase.initializeApp(FIREBASE_CONFIG);const db=firebase.firestore(),$=s=>document.querySelector(s);
-function doLogin(){firebase.auth().signInWithEmailAndPassword($('#em').value,$('#pw').value).catch(e=>alert(e.message))}
-firebase.auth().onAuthStateChanged(u=>{$('#login').style.display=u?'none':'block';$('#panel').style.display=u?'block':'none';if(u)refresh()});
-async function add(e,c){e.preventDefault();const o=Object.fromEntries(new FormData(e.target));['price','normal'].forEach(k=>{if(o[k])o[k]=+o[k]});o.stock=true;
-try{await db.collection(c).add(o);e.target.reset();alert('Saved');refresh()}catch(er){alert(er.message)}}
-async function refresh(){const g=async c=>(await db.collection(c).get()).docs.map(d=>({id:d.id,...d.data()}));
-const [p,o,q,cu]=await Promise.all([g('products'),g('orders'),g('enquiries'),g('customers')]);$('#cust').innerHTML='<tr><th>Name</th><th>Phone</th><th>Email</th></tr>'+cu.map(x=>`<tr><td>${x.name}</td><td>${x.phone||''}</td><td>${x.email}</td></tr>`).join('');
-$('#stats').innerHTML=[['Products',p.length],['Orders',o.length],['Enquiries',q.length]].map(x=>`<div class="card"><h2>${x[1]}</h2>${x[0]}</div>`).join('');
-const st=['Pending','Confirmed','Processing','Ready / Dispatched','Completed','Cancelled'];
-$('#orders').innerHTML='<tr><th>No</th><th>Customer</th><th>Total</th><th>Status</th></tr>'+o.map(x=>`<tr><td>${x.orderNo}</td><td>${x.name}<br>${x.phone}</td><td>${x.total}</td><td><select onchange="upd('orders','${x.id}',this.value)">${st.map(s=>`<option ${s==x.status?'selected':''}>${s}</option>`).join('')}</select></td></tr>`).join('');
-$('#enq').innerHTML='<tr><th>From</th><th>Type / Message</th><th>Status</th></tr>'+q.map(x=>`<tr><td>${x.name}<br>${x.phone}</td><td>${x.type}: ${x.message}</td><td><select onchange="upd('enquiries','${x.id}',this.value)">${['New','In Progress','Responded','Closed'].map(s=>`<option ${s==x.status?'selected':''}>${s}</option>`).join('')}</select></td></tr>`).join('')}
-function upd(c,id,s){db.collection(c).doc(id).update({status:s})}
+// Escape anything typed by customers before putting it into HTML
+const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// Which admin sections each staff role may see (real enforcement = Firestore rules, Part 2)
+const ROLES={
+ Administrator:['dashboard','products','packages','offers','orders','enquiries','customers','content','reviews','reports'],
+ Manager:['dashboard','products','packages','offers','orders','enquiries','customers','reviews','reports'],
+ Support:['dashboard','orders','enquiries']
+};
+let ME=null;
+const can=s=>!!ME&&ME.allowed.includes(s);
+function doLogin(){$('#loginMsg').textContent='';firebase.auth().signInWithEmailAndPassword($('#em').value,$('#pw').value).catch(e=>$('#loginMsg').textContent=e.message)}
+firebase.auth().onAuthStateChanged(async u=>{
+ ME=null;$('#panel').style.display='none';$('#login').style.display='block';
+ if(!u)return;
+ try{
+  const d=await db.collection('staff').doc(u.uid).get();
+  const x=d.exists?d.data():null;
+  if(!x||x.active===false||!ROLES[x.role]){
+   await firebase.auth().signOut();
+   $('#loginMsg').textContent='Not authorised. This account is not a staff account.';return;
+  }
+  ME={role:x.role,name:x.name||u.email,allowed:ROLES[x.role]};
+ }catch(e){
+  await firebase.auth().signOut();
+  $('#loginMsg').textContent='Could not verify staff access: '+e.message;return;
+ }
+ $('#login').style.display='none';$('#panel').style.display='block';
+ $('#who').textContent=ME.name+' ('+ME.role+')';
+ document.querySelectorAll('[data-sec]').forEach(el=>el.style.display=can(el.dataset.sec)?'':'none');
+ refresh();loadX();
+});
+async function add(e,c){e.preventDefault();if(!can(c))return alert('You do not have permission');
+ const o=Object.fromEntries(new FormData(e.target));['price','normal','value','min'].forEach(k=>{if(o[k])o[k]=+o[k]});o.stock=true;
+ try{await db.collection(c).add(o);e.target.reset();alert('Saved');refresh()}catch(er){alert(er.message)}}
+async function refresh(){
+ const g=async(c,s)=>{if(!can(s))return[];try{return(await db.collection(c).get()).docs.map(d=>({id:d.id,...d.data()}))}catch(e){return[]}};
+ const [p,o,q,cu]=await Promise.all([g('products','products'),g('orders','orders'),g('enquiries','enquiries'),g('customers','customers')]);
+ $('#cust').innerHTML='<tr><th>Name</th><th>Phone</th><th>Email</th></tr>'+cu.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.phone)}</td><td>${esc(x.email)}</td></tr>`).join('');
+ const cards=[];if(can('products'))cards.push(['Products',p.length]);if(can('orders'))cards.push(['Orders',o.length]);if(can('enquiries'))cards.push(['Enquiries',q.length]);
+ $('#stats').innerHTML=cards.map(x=>`<div class="card"><h2>${x[1]}</h2>${x[0]}</div>`).join('');
+ const st=['Pending','Confirmed','Processing','Ready / Dispatched','Completed','Cancelled'];
+ $('#orders').innerHTML='<tr><th>No</th><th>Customer</th><th>Total</th><th>Status</th></tr>'+o.map(x=>`<tr><td>${esc(x.orderNo)}</td><td>${esc(x.name)}<br>${esc(x.phone)}</td><td>${esc(x.total)}</td><td><select onchange="upd('orders','${esc(x.id)}',this.value)">${st.map(s=>`<option ${s==x.status?'selected':''}>${s}</option>`).join('')}</select></td></tr>`).join('');
+ $('#enq').innerHTML='<tr><th>From</th><th>Type / Message</th><th>Status</th></tr>'+q.map(x=>`<tr><td>${esc(x.name)}<br>${esc(x.phone)}</td><td>${esc(x.type)}: ${esc(x.message)}</td><td><select onchange="upd('enquiries','${esc(x.id)}',this.value)">${['New','In Progress','Responded','Closed'].map(s=>`<option ${s==x.status?'selected':''}>${s}</option>`).join('')}</select></td></tr>`).join('')}
+function upd(c,id,s){if(!can(c))return alert('You do not have permission');db.collection(c).doc(id).update({status:s}).catch(e=>alert(e.message))}
 </script><script src="js/admin-extra.js"></script></body></html>
