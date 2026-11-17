@@ -1,0 +1,24 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My Account - ARK Form Center</title><link rel="stylesheet" href="css/style.css"></head><body>
+<header><b>ARK Form Center</b><a style="color:#fff" href="index.html">Back to shop</a></header><main>
+<div id="out"><div class="card"><h3>Login</h3><input id="le" type="email" placeholder="Email"><input id="lp" type="password" placeholder="Password">
+<button onclick="login()">Login</button> <a href="#" onclick="reset();return false">Forgot password?</a></div><br>
+<div class="card"><h3>Register</h3><input id="rn" placeholder="Full name"><input id="rph" placeholder="Phone"><input id="re" type="email" placeholder="Email"><input id="rp" type="password" placeholder="Password (min 6)"><button onclick="register()">Create account</button></div></div>
+<div id="in" style="display:none"><div class="card"><h3>My Account</h3><input id="pn" placeholder="Name"><input id="pph" placeholder="Phone"><input id="pa" placeholder="Saved address"><button onclick="saveP()">Save profile</button> <button onclick="firebase.auth().signOut()">Logout</button></div>
+<h3>My Orders</h3><table id="ords"></table></div></main>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script><script>
+firebase.initializeApp(FIREBASE_CONFIG);const db=firebase.firestore(),auth=firebase.auth(),$=s=>document.querySelector(s);
+const err=e=>alert(e.message);
+function login(){auth.signInWithEmailAndPassword($('#le').value,$('#lp').value).catch(err)}
+function reset(){const m=$('#le').value;if(!m)return alert('Type your email in the Login box first');auth.sendPasswordResetEmail(m).then(()=>alert('Reset link sent to your email')).catch(err)}
+async function register(){try{const c=await auth.createUserWithEmailAndPassword($('#re').value,$('#rp').value);
+await db.collection('customers').doc(c.user.uid).set({name:$('#rn').value,phone:$('#rph').value,email:$('#re').value,address:'',date:new Date().toISOString()})}catch(e){err(e)}}
+async function saveP(){await db.collection('customers').doc(auth.currentUser.uid).set({name:$('#pn').value,phone:$('#pph').value,address:$('#pa').value},{merge:true});alert('Saved')}
+auth.onAuthStateChanged(async u=>{$('#out').style.display=u?'none':'block';$('#in').style.display=u?'block':'none';if(!u)return;
+try{const d=await db.collection('customers').doc(u.uid).get();const x=d.data()||{};$('#pn').value=x.name||'';$('#pph').value=x.phone||'';$('#pa').value=x.address||'';
+const s=await db.collection('orders').where('uid','==',u.uid).get();const o=s.docs.map(d=>d.data()).sort((a,b)=>b.date.localeCompare(a.date));
+$('#ords').innerHTML='<tr><th>Order</th><th>Date</th><th>Total</th><th>Status</th></tr>'+(o.length?o.map(x=>`<tr><td>${x.orderNo}</td><td>${x.date.slice(0,10)}</td><td>Rs ${x.total}</td><td>${x.status}</td></tr>`).join(''):'<tr><td colspan=4>No orders yet</td></tr>')}catch(e){err(e)}});
+</script></body></html>
