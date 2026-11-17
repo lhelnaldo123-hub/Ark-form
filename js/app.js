@@ -19,7 +19,7 @@ function show() {
 }
 addEventListener('hashchange', show);
 const img = p => `<img src="${p.image || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22/%3E'}" alt="">`;
-let PRODUCTS = [];
+let PRODUCTS = []; let coupon = null;
 function drawProducts() {
   const q = ($('#search').value || '').toLowerCase(), cat = $('#cat').value;
   const list = PRODUCTS.filter(p => (!q || p.name.toLowerCase().includes(q)) && (!cat || p.category === cat));
@@ -39,7 +39,7 @@ function drawCart() {
   $('#cartn').textContent = cart.length;
   $('#clist').innerHTML = cart.length ? cart.map((i, k) => `<tr><td>${i.name}</td><td>${money(i.price)}</td>
    <td><input type="number" min="1" value="${i.qty}" style="width:70px" onchange="cart[${k}].qty=+this.value;saveCart()"></td>
-   <td><button onclick="cart.splice(${k},1);saveCart()">x</button></td></tr>`).join('') + `<tr><th colspan=4>Total: ${money(t)}</th></tr>` : '<tr><td>Cart is empty</td></tr>';
+   <td><button onclick="cart.splice(${k},1);saveCart()">x</button></td></tr>`).join('') + `<tr><td colspan=4>Discount: ${money(disc())}</td></tr><tr><th colspan=4>Total: ${money(t - disc())}</th></tr>` : '<tr><td>Cart is empty</td></tr>';
 }
 async function checkout(e) {
   e.preventDefault();
@@ -47,8 +47,8 @@ async function checkout(e) {
   const f = e.target, no = 'ORD' + Date.now().toString().slice(-7);
   try {
     await db.collection('orders').add({ orderNo: no, name: f.name.value, phone: f.phone.value, address: f.address.value,
-      notes: f.notes.value, items: cart, total: cart.reduce((s, i) => s + i.price * i.qty, 0), payment: 'Cash on delivery', status: 'Pending', uid: (firebase.auth().currentUser || {}).uid || '', date: new Date().toISOString() });
-    cart = []; saveCart(); f.reset(); alert('Order placed! Your order number: ' + no);
+      notes: f.notes.value, items: cart, total: cart.reduce((s, i) => s + i.price * i.qty, 0) - disc(), discount: disc(), coupon: coupon ? coupon.code : '', payment: 'Cash on delivery', status: 'Pending', uid: (firebase.auth().currentUser || {}).uid || '', date: new Date().toISOString() });
+    cart = []; coupon = null; saveCart(); f.reset(); alert('Order placed! Your order number: ' + no);
   } catch (er) { alert('Could not send order: ' + er.message); }
 }
 async function sendEnquiry(e) {
@@ -65,6 +65,21 @@ async function sendEnquiry(e) {
   drawProducts();
   $('#pk').innerHTML = (await load('packages')).map(p => `<div class="card"><h4>${p.name}</h4><p>${p.items}</p>
    <s>${money(p.normal)}</s> <span class="price">${money(p.price)}</span><br><br><a class="btn" href="#contact">Enquire</a></div>`).join('');
-  $('#of').innerHTML = (await load('offers')).map(o => `<div class="card"><h4>${o.title}</h4><p>${o.details}</p><b>Code: ${o.code || '-'}</b></div>`).join('');
+  $('#of').innerHTML = (await load('offers')).filter(o => !o.expiry || o.expiry >= new Date().toISOString().slice(0, 10)).map(o => `<div class="card"><h4>${o.title}</h4><p>${o.details}</p><b>Code: ${o.code || '-'}</b></div>`).join('');
   drawCart(); show();
 })();
+
+function disc() {
+  const t = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  if (!coupon || t < (+coupon.min || 0)) return 0;
+  return Math.min(t, coupon.type == 'percent' ? Math.round(t * coupon.value / 100) : +coupon.value);
+}
+async function applyCoupon() {
+  const c = $('#cc').value.trim().toUpperCase();
+  const o = (await load('offers')).find(x => x.type && (x.code || '').toUpperCase() === c);
+  if (!o) return alert('Invalid coupon code');
+  if (o.expiry && o.expiry < new Date().toISOString().slice(0, 10)) return alert('This coupon has expired');
+  const t = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  if (t < (+o.min || 0)) return alert('Minimum spend is ' + money(o.min));
+  coupon = o; drawCart(); alert('Coupon applied');
+}
