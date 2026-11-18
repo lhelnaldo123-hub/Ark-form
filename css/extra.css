@@ -111,3 +111,4 @@ body.adm #nav button[data-s=board]::before{content:"\1F69A"}
 .ratepop .rs{display:flex;gap:4px;margin:6px 0 10px}
 .ratepop .rs a{font-size:30px;line-height:1;color:#d8b25a;text-decoration:none;transition:.15s}
 .ratepop .rs a:hover{transform:scale(1.2)}
+.why{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:8px 0}.why div{background:#fff;border-radius:16px;padding:14px;box-shadow:var(--sh);border:1px solid #f1ebdb;font-size:13px;color:var(--mute)}.why strong{display:block;color:var(--p);font-size:14px;margin-bottom:3px}
