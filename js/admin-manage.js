@@ -7,7 +7,7 @@ const MANAGE={
  banners:{sec:'banners',title:'Manage Banners',flag:'active',cols:['title','subtitle','order'],
   fields:[['title','Title','text'],['subtitle','Subtitle','text'],['image','Banner photo','img'],['btn','Button text','text'],['link','Button link (#products, #offers or a web address)','text'],['order','Display order','number'],['active','Active (shown on website)','check']]},
  packages:{sec:'packages',title:'Manage Packages',flag:'active',cols:['name','items','price'],
-  fields:[['name','Package name','text'],['items','Included items','area'],['normal','Normal price','number'],['price','Package price','number'],['validity','Valid until','date'],['conditions','Conditions','text'],['options','Customisation options','text'],['active','Active (visible on website)','check']]},
+  fields:[['name','Package name','text'],['items','Included items','area'],['normal','Normal price','number'],['price','Package price','number'],['validity','Valid until','date'],['conditions','Conditions','text'],['options','Customisation options','text'],['featured','Featured package','check'],['active','Active (visible on website)','check']]},
  offers:{sec:'offers',title:'Manage Offers',flag:'active',cols:['title','code','value'],
   fields:[['title','Title','text'],['code','Coupon code','text'],['details','Details','area'],['image','Banner photo','img'],['type','Type','select:percent|fixed'],['value','Discount value','number'],['min','Minimum spend','number'],['start','Start date','date'],['expiry','Expiry date','date'],['limit','Usage limit (optional)','number'],['eligible','Eligible categories / product names (comma separated, empty = all)','text'],['active','Active','check']]}
 };
