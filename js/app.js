@@ -2,7 +2,8 @@ firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.firestore();
 const $ = s => document.querySelector(s);
 const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const money = n => 'Rs ' + Number(n || 0).toLocaleString();
+let SYM = 'Rs', SET = {};
+const money = n => SYM + ' ' + Number(n || 0).toLocaleString();
 const today = () => new Date().toISOString().slice(0, 10);
 const safeUrl = u => /^https?:\/\//i.test(String(u || '').trim()) ? String(u).trim() : '';
 const validPhone = v => /^[+()\d\s-]{7,20}$/.test(v) && v.replace(/\D/g, '').length >= 7;
@@ -63,6 +64,7 @@ const pkcard = k => `<div class="card"><h4>${esc(k.name)}</h4><p>${esc(k.items)}
   <button onclick="enquirePkg('${esc(k.id)}')">Enquire / Request Package</button></div>`;
 const ocard = o => `<div class="card">${o.image ? `<img src="${esc(o.image)}" alt="">` : ''}<h4>${esc(o.title)}</h4><p>${esc(o.details || '')}</p>
   <p class="price">${o.type === 'percent' ? (+o.value || 0) + '% off' : money(o.value) + ' off'}</p>${+o.min ? `<p class="tag">Minimum order ${money(o.min)}</p>` : ''}
+  ${o.eligible ? `<p class="tag">Applies to: ${esc(o.eligible)}</p>` : ''}
   <p class="tag">${o.start ? 'From ' + esc(o.start) + ' ' : ''}${o.expiry ? 'Until ' + esc(o.expiry) : ''}</p>
   ${o.code ? `<p><b>Code: ${esc(o.code)}</b></p><p class="tag">Enter this code in your cart to get the discount.</p>` : ''}</div>`;
 
@@ -88,7 +90,8 @@ function drawProducts() {
 function drawCategory(n) {
   CUR = n; const q = ($('#csearch').value || '').toLowerCase();
   $('#catTitle').textContent = n;
-  const c = CATS.find(x => x.name === n); $('#catDesc').textContent = c && c.description ? c.description : '';
+  const c = CATS.find(x => x.name === n);
+  $('#catDesc').innerHTML = (c && safeUrl(c.image) ? `<img src="${esc(safeUrl(c.image))}" alt="" style="max-width:100%;height:120px;object-fit:cover;border-radius:8px"><br>` : '') + esc(c && c.description ? c.description : '');
   const l = sorted(PRODUCTS.filter(p => p.category === n && (!q || (p.name || '').toLowerCase().includes(q))), $('#csort').value);
   $('#clistc').innerHTML = l.length ? l.map(pcard).join('') : '<p>No products in this category yet.</p>';
 }
@@ -132,26 +135,42 @@ function addCart(id, variant, qty) {
   if (variants(p).length && variant === undefined) { location.hash = '#view/' + id; return toast('Please choose a size / option'); }
   qty = Math.max(1, parseInt(qty) || 1);
   const i = cart.find(x => x.id === id && (x.variant || '') === (variant || ''));
-  i ? i.qty += qty : cart.push({ id, name: p.name, price: eff(p), qty, variant: variant || '' });
+  i ? i.qty += qty : cart.push({ id, name: p.name, category: p.category || '', price: eff(p), qty, variant: variant || '' });
   saveCart(); toast('Added to cart');
 }
 function setQty(k, v) { cart[k].qty = Math.max(1, parseInt(v) || 1); saveCart(); }
 function rmItem(k) { cart.splice(k, 1); saveCart(); }
 const sub = () => cart.reduce((s, i) => s + i.price * i.qty, 0);
+// does a cart item qualify for the coupon? (empty "eligible" = everything)
+const matches = (i, o) => {
+  const e = String(o.eligible || '').toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
+  return !e.length || e.includes((i.category || '').toLowerCase()) || e.includes((i.name || '').toLowerCase());
+};
 function disc() {
+  if (!coupon) return 0;
   const t = sub();
-  if (!coupon || t < (+coupon.min || 0)) return 0;
-  return Math.min(t, coupon.type == 'percent' ? Math.round(t * coupon.value / 100) : +coupon.value);
+  if (t < (+coupon.min || 0)) return 0;
+  const base = cart.filter(i => matches(i, coupon)).reduce((s, i) => s + i.price * i.qty, 0);
+  return Math.min(base, coupon.type == 'percent' ? Math.round(base * coupon.value / 100) : +coupon.value);
+}
+function fees() {
+  const net = sub() - disc(), fee = +SET.deliveryFee || 0, free = +SET.freeAbove || 0;
+  const delivery = cart.length && fee > 0 && !(free > 0 && net >= free) ? fee : 0;
+  const tax = Math.round(net * (+SET.tax || 0) / 100);
+  return { net, delivery, tax, total: net + delivery + tax };
 }
 function drawCart() {
-  const t = sub(), d = disc();
+  const t = sub(), d = disc(), fe = fees();
   $('#cartn').textContent = cart.reduce((s, i) => s + i.qty, 0);
   const low = coupon && t < (+coupon.min || 0) ? ' - minimum spend ' + money(coupon.min) : '';
+  const extra = (+SET.deliveryFee ? `<tr><td colspan=4>Delivery: ${fe.delivery ? money(fe.delivery) : 'Free'}</td></tr>` : '') + (+SET.tax ? `<tr><td colspan=4>Tax (${+SET.tax}%): ${money(fe.tax)}</td></tr>` : '');
   $('#clist').innerHTML = cart.length ? '<tr><th>Item</th><th>Price</th><th>Qty</th><th></th></tr>' + cart.map((i, k) => `<tr><td>${esc(i.name)}${i.variant ? `<br><span class="tag">${esc(i.variant)}</span>` : ''}</td><td>${money(i.price)}</td>
    <td><input type="number" min="1" value="${i.qty}" style="width:64px;margin:0" onchange="setQty(${k},this.value)"></td><td><button onclick="rmItem(${k})">x</button></td></tr>`).join('') +
-    `<tr><td colspan=4>Subtotal: ${money(t)}</td></tr><tr><td colspan=4>Discount${coupon ? ' (' + esc(coupon.code) + ')' : ''}: ${money(d)}${esc(low)}</td></tr><tr><th colspan=4>Total: ${money(t - d)}</th></tr>` : '<tr><td>Your cart is empty</td></tr>';
+    `<tr><td colspan=4>Subtotal: ${money(t)}</td></tr><tr><td colspan=4>Discount${coupon ? ' (' + esc(coupon.code) + ')' : ''}: ${money(d)}${esc(low)}</td></tr>${extra}<tr><th colspan=4>Total: ${money(fe.total)}</th></tr>` : '<tr><td>Your cart is empty</td></tr>';
   $('#sum').innerHTML = cart.length ? `<h4>Order summary</h4>${cart.map(i => `<p><span>${esc(i.name)}${i.variant ? ' (' + esc(i.variant) + ')' : ''} × ${i.qty}</span><span>${money(i.price * i.qty)}</span></p>`).join('')}<hr>
-   <p><span>Subtotal</span><span>${money(t)}</span></p><p><span>Discount</span><span>- ${money(d)}</span></p><p><b>Total</b><b>${money(t - d)}</b></p>` : '';
+   <p><span>Subtotal</span><span>${money(t)}</span></p><p><span>Discount</span><span>- ${money(d)}</span></p>
+   ${+SET.deliveryFee ? `<p><span>Delivery</span><span>${fe.delivery ? money(fe.delivery) : 'Free'}</span></p>` : ''}${+SET.tax ? `<p><span>Tax (${+SET.tax}%)</span><span>${money(fe.tax)}</span></p>` : ''}
+   <p><b>Total</b><b>${money(fe.total)}</b></p>` : '';
 }
 async function applyCoupon() {
   const m = $('#cmsg'), say = (t, ok) => { m.className = 'msg ' + (ok ? 'ok' : 'err'); m.textContent = t; };
@@ -162,7 +181,9 @@ async function applyCoupon() {
   if (o.active === false) return say('This coupon is not active', 0);
   if (o.start && o.start > today()) return say('This coupon starts on ' + o.start, 0);
   if (o.expiry && o.expiry < today()) return say('This coupon has expired', 0);
+  if (+o.limit && (+o.used || 0) >= +o.limit) return say('This coupon has reached its usage limit', 0);
   if (sub() < (+o.min || 0)) return say('Minimum spend is ' + money(o.min), 0);
+  if (!cart.some(i => matches(i, o))) return say('This coupon does not apply to the items in your cart', 0);
   coupon = o; drawCart(); say('Coupon applied', 1);
 }
 async function checkout(e) {
@@ -173,11 +194,12 @@ async function checkout(e) {
   if (v('email') && !/^\S+@\S+\.\S+$/.test(v('email'))) return fmsg(f, 'Please enter a valid email or leave it empty', 0);
   if (v('address').length < 6) return fmsg(f, 'Please enter your full delivery address', 0);
   const b = f.querySelector('button'); b.disabled = true;
-  const no = 'ORD' + Date.now().toString().slice(-7), d = disc(), s = sub();
-  const o = { orderNo: no, name: v('name'), phone: v('phone'), email: v('email'), address: v('address'), notes: v('notes'), items: cart, subtotal: s, total: s - d, discount: d,
-    coupon: coupon ? coupon.code : '', payment: 'Cash on delivery', status: 'Pending', uid: (firebase.auth().currentUser || {}).uid || '', date: new Date().toISOString() };
+  const no = 'ORD' + Date.now().toString().slice(-7), d = disc(), s = sub(), fe = fees();
+  const o = { orderNo: no, name: v('name'), phone: v('phone'), email: v('email'), address: v('address'), notes: v('notes'), items: cart, subtotal: s, discount: d, delivery: fe.delivery, tax: fe.tax, total: fe.total,
+    coupon: coupon ? coupon.code : '', payment: 'Cash on delivery', payStatus: 'Unpaid', status: 'Pending', uid: (firebase.auth().currentUser || {}).uid || '', date: new Date().toISOString() };
   try {
     await db.collection('orders').add(o);
+    if (coupon && coupon.id) { try { await db.collection('offers').doc(coupon.id).update({ used: firebase.firestore.FieldValue.increment(1) }); } catch (x) {} }
     try { sessionStorage.setItem('lastOrder', JSON.stringify(o)); } catch (x) {}
     cart = []; coupon = null; saveCart(); f.reset(); fmsg(f, '', 1);
     location.hash = '#confirm/' + no;
@@ -191,7 +213,9 @@ function drawConfirm(no) {
   b.innerHTML = `<div class="card sum"><h2 style="margin-top:0">✅ Thank you, ${esc(o.name)}!</h2><p>Your order has been placed. We will contact you on ${esc(o.phone)} to confirm.</p>
   <p><span>Order number</span><b>${esc(o.orderNo)}</b></p><p><span>Status</span><span>${esc(o.status)}</span></p><hr>
   ${o.items.map(i => `<p><span>${esc(i.name)}${i.variant ? ' (' + esc(i.variant) + ')' : ''} × ${esc(i.qty)}</span><span>${money(i.price * i.qty)}</span></p>`).join('')}<hr>
-  <p><span>Subtotal</span><span>${money(o.subtotal)}</span></p><p><span>Discount${o.coupon ? ' (' + esc(o.coupon) + ')' : ''}</span><span>- ${money(o.discount)}</span></p><p><b>Total</b><b>${money(o.total)}</b></p>
+  <p><span>Subtotal</span><span>${money(o.subtotal)}</span></p><p><span>Discount${o.coupon ? ' (' + esc(o.coupon) + ')' : ''}</span><span>- ${money(o.discount)}</span></p>
+  ${+o.delivery ? `<p><span>Delivery</span><span>${money(o.delivery)}</span></p>` : ''}${+o.tax ? `<p><span>Tax</span><span>${money(o.tax)}</span></p>` : ''}
+  <p><b>Total</b><b>${money(o.total)}</b></p>
   <p><span>Payment</span><span>${esc(o.payment)}</span></p><p><span>Deliver to</span><span>${esc(o.address)}</span></p></div>
   <p><a class="btn" href="account.html">Track in My Account</a> <a class="btn" href="#products" style="background:var(--p)">Continue shopping</a></p>`;
 }
@@ -219,11 +243,19 @@ firebase.auth().onAuthStateChanged(async u => {
   } catch (e) {}
 });
 (async () => {
-  PRODUCTS = (await load('products')).filter(p => p.published !== false);
+  try { SET = (await db.collection('settings').doc('store').get()).data() || {}; } catch (e) {}
+  if (SET.currency) SYM = SET.currency;
+  const hb = document.querySelector('header b');
+  if (SET.businessName) { hb.textContent = SET.businessName; document.title = SET.businessName; }
+  if (safeUrl(SET.logo)) hb.insertAdjacentHTML('afterbegin', `<img src="${esc(safeUrl(SET.logo))}" alt="" style="height:26px;vertical-align:middle;margin-right:8px;border-radius:4px">`);
+  CATS = await load('categories');
+  const off = new Set(CATS.filter(c => c.active === false).map(c => c.name));
+  PRODUCTS = (await load('products')).filter(p => p.published !== false && !off.has(p.category));
   PACKAGES = (await load('packages')).filter(liveP);
   OFFERS = (await load('offers')).filter(liveO);
-  CATS = await load('categories'); READY = true;
-  const cats = [...new Set(PRODUCTS.map(p => p.category).filter(Boolean))];
+  READY = true;
+  const enabled = CATS.filter(c => c.active !== false).sort((a, b) => (+a.order || 0) - (+b.order || 0)).map(c => c.name);
+  const cats = [...new Set([...enabled, ...PRODUCTS.map(p => p.category).filter(Boolean)])];
   $('#cat').innerHTML = '<option value="">All categories</option>' + cats.map(c => `<option>${esc(c)}</option>`).join('');
   $('#homeCats').innerHTML = cats.map(c => `<a class="chip" href="#category/${encodeURIComponent(c)}">${esc(c)}</a>`).join('') || '<p>No categories yet.</p>';
   const fe = PRODUCTS.filter(p => p.featured);
