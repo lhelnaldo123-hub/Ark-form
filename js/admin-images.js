@@ -27,13 +27,17 @@ function buildImg(w, val) {
   const h = w.querySelector('input[type=hidden]'), th = w.querySelector('.ith'), msg = w.querySelector('.msg');
   h.value = Array.isArray(val) ? val.join('\n') : String(val || '');
   const list = () => splitImgs2(h.value);
-  const draw = () => { th.innerHTML = list().map((u, i) => `<span><img src="${esc(u)}" alt=""><b data-i="${i}">×</b></span>`).join(''); };
+  const draw = () => { const L = list(); th.innerHTML = L.map((u, i) => `<span><img src="${esc(u)}" alt=""><b data-i="${i}">×</b>${multi && L.length > 1 ? `<div class="mv">${i > 0 ? `<button type="button" data-mv="${i}" data-d="-1" aria-label="Move earlier">◀</button>` : '<i></i>'}${i < L.length - 1 ? `<button type="button" data-mv="${i}" data-d="1" aria-label="Move later">▶</button>` : '<i></i>'}</div>` : ''}</span>`).join(''); };
   const set = a => {
     const v = a.join('\n');
     if (v.length > IMG_TOTAL_MAX) { msg.className = 'msg err'; msg.textContent = 'Too many or too large photos for one item. Remove one first.'; return false; }
     h.value = v; msg.textContent = ''; draw(); return true;
   };
-  th.onclick = e => { const b = e.target.closest('b'); if (!b) return; const a = list(); a.splice(+b.dataset.i, 1); set(a); };
+  th.onclick = e => {
+    const m = e.target.closest('button[data-mv]');
+    if (m) { const a = list(), i = +m.dataset.mv, j = i + +m.dataset.d; if (j < 0 || j >= a.length) return; [a[i], a[j]] = [a[j], a[i]]; set(a); return; }
+    const b = e.target.closest('b'); if (!b) return; const a = list(); a.splice(+b.dataset.i, 1); set(a);
+  };
   w.querySelector('input[type=file]').onchange = async e => {
     const fs = [...e.target.files]; e.target.value = ''; if (!fs.length) return;
     msg.className = 'msg'; msg.textContent = 'Preparing photo...';
@@ -47,3 +51,5 @@ function buildImg(w, val) {
 }
 function initImgs(root) { (root || document).querySelectorAll('.imgw').forEach(w => buildImg(w, '')); }
 initImgs();
+// small style for the move-left / move-right buttons (image ordering)
+(function () { const s = document.createElement('style'); s.textContent = '.ith .mv{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between}.ith .mv button{padding:0 7px;height:22px;font-size:11px;line-height:1;border-radius:0 0 0 10px;background:#000a;color:#fff}.ith .mv button:last-child{border-radius:0 0 10px 0}'; document.head.appendChild(s); })();
