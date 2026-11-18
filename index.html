@@ -1,6 +1,8 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#13294b">
-<title>ARK Form Center</title><link rel="stylesheet" href="css/style.css"></head><body>
+<meta name="theme-color" content="#0a1830">
+<title>ARK Form Center</title>
+<link rel="preconnect" href="https://images.unsplash.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="css/style.css"></head><body>
 
 <div class="strip" id="strip" style="display:none"></div>
 <div class="top">
@@ -29,7 +31,15 @@
   <button class="hn hp" onclick="heroGo(HI-1);heroStart()" aria-label="Previous">‹</button><button class="hn hnx" onclick="heroGo(HI+1);heroStart()" aria-label="Next">›</button>
   <div class="dots" id="dots"></div>
  </div>
+
+ <section class="floatband" id="floatband">
+  <div class="fb-head"><h3>Trending now</h3><p>Tap any product to open it</p></div>
+  <div class="fview"><div class="ftrack"></div></div>
+ </section>
+
  <div class="trust"><span>✔ Quality products</span><span>✔ Friendly service</span><span>✔ Easy ordering</span><span>✔ Cash on delivery</span></div>
+ <div class="how"><div><b>🔎</b><strong>Browse</strong>Pick your products</div><div><b>🛒</b><strong>Add to cart</strong>Use a coupon code</div><div><b>🚚</b><strong>We deliver</strong>Pay cash on delivery</div></div>
+
  <div class="sh"><h3>Shop by category</h3></div><div id="homeCats" class="cats"></div>
  <div class="sh"><h3>Featured products</h3><a href="#products">View all →</a></div>
  <div id="feat" class="pg"><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div></div>
@@ -98,4 +108,4 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="js/firebase-config.js"></script><script src="js/app.js"></script><script src="js/site-content.js"></script></body></html>
+<script src="js/firebase-config.js"></script><script src="js/app.js"></script><script src="js/site-content.js"></script><script src="js/fx.js"></script></body></html>
