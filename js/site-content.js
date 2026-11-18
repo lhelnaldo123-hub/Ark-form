@@ -37,3 +37,26 @@ async function sendReview(e) {
     f.reset(); fmsg(f, 'Thanks! Your review will show after approval.', 1);
   } catch (er) { fmsg(f, er.message, 0); }
 }
+// ---- editable home / About content (all text comes from Admin > Site Content) ----
+(async () => {
+  const s = await SITEP;
+  const lines = t => String(t || '').split('\n').map(x => x.trim()).filter(Boolean).map(x => { const i = x.indexOf('|'); return i < 0 ? [x, ''] : [x.slice(0, i).trim(), x.slice(i + 1).trim()]; });
+  const cards = a => a.map(x => `<div><strong>${esc(x[0])}</strong>${esc(x[1])}</div>`).join('');
+  const why = lines(s.why);
+  if (why.length) $('#whyBox').innerHTML = cards(why);
+  const tm = lines(s.testimonials);
+  if (tm.length) $('#rev').insertAdjacentHTML('beforebegin', `<div class="dg">${tm.map(x => `<div class="rv"><p>${esc(x[1])}</p><b>${esc(x[0])}</b></div>`).join('')}</div>`);
+  const hl = lines(s.highlights);
+  let h = '';
+  if (s.mission) h += `<h4 style="margin-top:12px">Mission &amp; values</h4><p style="white-space:pre-wrap">${esc(s.mission)}</p>`;
+  if (hl.length) h += `<h4 style="margin-top:12px">Business highlights</h4><div class="why">${cards(hl)}</div>`;
+  if (h) $('#aboutText').insertAdjacentHTML('afterend', h);
+  const cta = document.querySelector('#home .cta');
+  if (cta) {
+    if (s.ctaTitle) cta.querySelector('h3').textContent = s.ctaTitle;
+    if (s.ctaText) cta.querySelector('p').textContent = s.ctaText;
+    const a = cta.querySelector('a');
+    if (s.ctaBtn) a.textContent = s.ctaBtn;
+    const l = okLink(s.ctaLink); if (l) a.href = l;
+  }
+})();
