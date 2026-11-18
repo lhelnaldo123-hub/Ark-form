@@ -11,8 +11,7 @@
  <form class="sbox" onsubmit="goSearch(event)"><input id="hs" type="search" placeholder="Search products..." autocomplete="off"><button>Search</button></form>
  <span class="sp"></span>
  <a class="ib" href="account.html" aria-label="My account">👤</a>
- <a class="ib" href="account.html#inbox" aria-label="Notifications">🔔<b class="bdg" id="inboxn" style="display:none">0</b></a>
- <a class="ib" href="#cart" aria-label="Cart">🛒<b class="bdg" id="cartn" style="display:none">0</b></a>
+  <a class="ib" href="#cart" aria-label="Cart">🛒<b class="bdg" id="cartn" style="display:none">0</b></a>
 </div>
 <nav class="tabs" id="tabs"><a href="#home" data-p="home">Home</a><a href="#products" data-p="products">Products</a><a href="#packages" data-p="packages">Packages</a><a href="#offers" data-p="offers">Offers</a><a href="#contact" data-p="contact">Contact</a></nav>
 
@@ -20,11 +19,10 @@
 <aside class="dr" id="dr">
  <div class="dh"><b>ARK Form Center</b><button class="ib" style="color:#fff" onclick="closeMenu()" aria-label="Close">✕</button></div>
  <div class="dauth" id="dAuth"><a class="btn sm" href="account.html">Login / Register</a></div>
- <h5>Menu</h5><a href="#home">Home</a><a href="#about">About Us</a><a href="#products">All Products</a><a href="#packages">Packages / Deals</a><a href="#offers">Offers &amp; Discounts</a><a href="#faq">FAQs</a><a href="#contact">Contact Us</a><a href="account.html">My Profile</a><a href="account.html#track">📍 Track My Order</a><a href="account.html#orders">Past Orders</a><a href="#cart">My Cart</a>
+ <h5>Menu</h5><a href="#home">Home</a><a href="#about">About Us</a><a href="#products">All Products</a><a href="#packages">Packages / Deals</a><a href="#offers">Offers &amp; Discounts</a><a href="#faq">FAQs</a><a href="#contact">Contact Us</a><a href="account.html">My Account</a><a href="account.html#orders">My Orders</a><a href="#cart">My Cart</a>
  <h5>Shop by category</h5><div id="drCats"></div>
  <h5>Policies</h5><a href="#privacy">Privacy Policy</a><a href="#terms">Terms &amp; Conditions</a><a href="#returns">Return / Exchange</a>
- <h5>Staff</h5><a href="admin.html">Admin Login</a>
-</aside>
+ </aside>
 
 <main>
 <section id="home" class="page on">
@@ -34,13 +32,8 @@
   <div class="dots" id="dots"></div>
  </div>
 
- <section class="floatband" id="floatband">
-  <div class="fb-head"><h3>Trending now</h3><p>Tap any product to open it</p></div>
-  <div class="fview"><div class="ftrack"></div></div>
- </section>
 
- <div class="trust"><span>✔ Quality products</span><span>✔ Friendly service</span><span>✔ Easy ordering</span><span>✔ Cash on delivery</span></div>
- <div class="how"><div><b>🔎</b><strong>Browse</strong>Pick your products</div><div><b>🛒</b><strong>Add to cart</strong>Use a coupon code</div><div><b>🚚</b><strong>We deliver</strong>Pay cash on delivery</div></div>
+ <div class="sh"><h3>Why choose ARK Form Center</h3></div><div id="whyBox" class="why"><div><strong>To be supplied</strong>Business strengths and service benefits will be added by ARK Form Center.</div></div>
 
  <div class="sh"><h3>Shop by category</h3></div><div id="homeCats" class="cats"></div>
  <div class="sh"><h3>Featured products</h3><a href="#products">View all →</a></div>
@@ -86,13 +79,11 @@
   <div class="card"><h4>Have a coupon?</h4><input id="cc" placeholder="Coupon code" style="max-width:260px"> <button onclick="applyCoupon()">Apply</button><p id="cmsg" class="msg"></p></div></div>
  <form id="coForm" onsubmit="checkout(event)" class="card"><h3 style="margin-top:0">Checkout</h3><div id="sum" class="sum"></div>
   <input name="name" placeholder="Full name" required><input name="phone" type="tel" placeholder="Phone" required><input name="email" type="email" placeholder="Email (optional)"><input name="address" placeholder="Delivery address" required><textarea name="notes" placeholder="Order notes"></textarea>
-  <h4 style="margin:6px 0 0">How do you want your order?</h4><div class="mth"><label class="mopt"><input type="radio" name="method" value="Delivery" checked><span>🚚 Delivery</span></label><label class="mopt"><input type="radio" name="method" value="Pickup"><span>🏬 Pickup</span></label></div><p class="picknote" id="pickNote" style="display:none"></p>
-  <p>Payment: Cash on delivery (or pay when you collect)</p><p class="gate sm" id="loginNote">🔒 You need to log in to place your order. Your cart will be saved and waiting for you.</p><button>Place Order</button><p class="msg"></p></form></div></section>
+  <label class="tag" id="payLbl">Payment method</label><select name="payment" id="paySel"></select><p class="tag" id="payNote"></p><p class="gate sm" id="loginNote">🔒 Please log in or register to place your order. Your cart is saved.</p><button>Place Order</button><p class="msg"></p></form></div></section>
 
 <section id="confirm" class="page"><div id="confBox"></div></section>
 </main>
 
-<a href="#cart" class="fcart" id="fcart" aria-label="Open cart">🛒<b class="bdg" id="cartn2" style="display:none">0</b></a>
 
 <div class="lb" id="lb">
  <div class="lbt"><span id="lbc"></span><button onclick="lbClose()" aria-label="Close">✕</button></div>
@@ -104,11 +95,11 @@
 <footer><div class="fgrid">
 <div><h4>ARK Form Center</h4><p>Hyderabad, Sindh, Pakistan</p><div id="fContact"><p>Contact details to be supplied.</p></div><div id="fSocial"></div></div>
 <div><h4>Quick links</h4><a href="#home">Home</a><a href="#products">Products</a><a href="#packages">Packages</a><a href="#offers">Offers</a></div>
-<div><h4>Support</h4><a href="#contact">Contact Us</a><a href="#faq">FAQs</a><a href="#privacy">Privacy Policy</a><a href="#terms">Terms &amp; Conditions</a><a href="#returns">Return / Exchange</a><a href="account.html">My Profile</a><a href="account.html#track">Track My Order</a></div>
+<div><h4>Support</h4><a href="#contact">Contact Us</a><a href="#faq">FAQs</a><a href="#privacy">Privacy Policy</a><a href="#terms">Terms &amp; Conditions</a><a href="#returns">Return / Exchange</a><a href="account.html">My Account</a></div>
 <div><h4>Staff</h4><a href="admin.html">Admin Login</a></div></div>
 <p class="copy">© ARK Form Center. All rights reserved.</p></footer>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="js/firebase-config.js"></script><script src="js/app.js"></script><script src="js/site-content.js"></script><script src="js/fx.js"></script><script src="js/shop-account.js"></script></body></html>
+<script src="js/firebase-config.js"></script><script src="js/app.js"></script><script src="js/site-content.js"></script></body></html>
