@@ -1,74 +1,126 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ARK Admin</title><link rel="stylesheet" href="css/style.css"></head><body>
+<title>ARK Admin</title><link rel="stylesheet" href="css/style.css">
+<style>
+#nav{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+#nav button{background:#fff;color:var(--p);border:1px solid #ccd}
+#nav button.on{background:var(--p);color:#fff}
+.fl{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.sm{padding:5px 9px;font-size:12px}
+.wrap{overflow-x:auto}
+.bars{display:flex;align-items:flex-end;gap:6px;height:90px;padding-top:16px}
+.bars div{flex:1;background:var(--a);border-radius:4px 4px 0 0;min-height:2px;position:relative}
+.bars span{position:absolute;top:-16px;left:0;right:0;text-align:center;font-size:11px}
+.note{background:#f4f7fa;border-radius:6px;padding:6px 8px;margin:4px 0;font-size:13px}
+#dlg{max-width:560px;width:94%;border:1px solid #ccc;border-radius:10px;padding:16px}
+[data-sec]{margin-bottom:18px}
+@media print{header,#nav,.noprint,button{display:none!important}}
+</style></head><body>
 <header><b>ARK Admin Panel</b><a style="color:#fff" href="index.html">View site</a></header><main>
 <div id="login" class="card"><h3>Admin Login</h3><input id="em" type="email" placeholder="Email"><input id="pw" type="password" placeholder="Password"><button onclick="doLogin()">Login</button>
 <p id="loginMsg" style="color:#b00020"></p></div>
 <div id="panel" style="display:none">
-<p><b id="who"></b> <button onclick="firebase.auth().signOut()">Logout</button></p>
-<div data-sec="dashboard"><h3>Dashboard</h3><div class="grid" id="stats"></div></div>
-<div data-sec="products"><h3>Add Product</h3><form class="card" onsubmit="add(event,'products')"><input name="name" placeholder="Name" required><input name="category" placeholder="Category"><input name="price" type="number" placeholder="Price" required><input name="salePrice" type="number" placeholder="Sale price (optional)"><input name="sku" placeholder="SKU / code (optional)"><input name="image" placeholder="Main image URL"><input name="images" placeholder="More image URLs (comma separated)"><input name="variants" placeholder="Sizes / variants (comma separated, optional)"><textarea name="specs" placeholder="Specifications (one per line)"></textarea><textarea name="description" placeholder="Description"></textarea><label class="tag"><input type="checkbox" name="featured" style="width:auto;margin-right:6px">Featured on home page</label><br><button>Save</button></form></div>
-<div data-sec="packages"><h3>Add Package</h3><form class="card" onsubmit="add(event,'packages')"><input name="name" placeholder="Package name" required><input name="items" placeholder="Included items"><input name="normal" type="number" placeholder="Normal price"><input name="price" type="number" placeholder="Package price"><label class="tag">Valid until</label><input name="validity" type="date"><input name="conditions" placeholder="Package conditions (optional)"><input name="options" placeholder="Customisation options (optional)"><button>Save</button></form></div>
-<div data-sec="offers"><h3>Add Offer / Coupon</h3><form class="card" onsubmit="add(event,'offers')"><input name="title" placeholder="Title" required><input name="code" placeholder="Coupon code"><input name="details" placeholder="Details"><input name="image" placeholder="Banner image URL (optional)"><select name="type"><option value="percent">Percent %</option><option value="fixed">Fixed amount (Rs)</option></select><input name="value" type="number" placeholder="Discount value"><input name="min" type="number" placeholder="Minimum spend"><label class="tag">Start date</label><input name="start" type="date"><label class="tag">Expiry date</label><input name="expiry" type="date"><button>Save</button></form></div>
-<div data-sec="orders"><h3>Orders</h3><table id="orders"></table></div>
-<div data-sec="enquiries"><h3>Enquiries</h3><table id="enq"></table></div>
-<div data-sec="customers"><h3>Customers</h3><table id="cust"></table></div>
+<p><b id="who"></b> <button onclick="auth.signOut()">Logout</button></p>
+<div id="nav"></div>
+
+<div data-sec="dashboard"><h3>Dashboard</h3><div class="grid" id="stats"></div>
+<h4>Quick actions</h4><p id="quick"></p>
+<h4>Orders - last 7 days</h4><div id="chart"></div>
+<h4>Recent orders</h4><div class="wrap"><table id="recent"></table></div>
+<h4>Latest enquiries</h4><div class="wrap"><table id="recentq"></table></div></div>
+
+<div data-sec="products"><h3>Add Product</h3><form class="card" onsubmit="add(event,'products')"><input name="name" placeholder="Name" required><input name="category" list="catlist" placeholder="Category"><input name="price" type="number" min="0" placeholder="Price" required><input name="salePrice" type="number" min="0" placeholder="Sale price (optional)"><input name="sku" placeholder="SKU / code (optional)"><input name="image" placeholder="Main image URL"><input name="images" placeholder="More image URLs (comma separated)"><input name="variants" placeholder="Sizes / variants (comma separated, optional)"><textarea name="specs" placeholder="Specifications (one per line)"></textarea><textarea name="description" placeholder="Description"></textarea><label class="tag"><input type="checkbox" name="featured" style="width:auto;margin-right:6px">Featured on home page</label><br><button>Save</button></form><div id="mg-products"></div></div>
+
+<div data-sec="categories"><h3>Add Category</h3><form class="card" onsubmit="add(event,'categories')"><input name="name" placeholder="Category name" required><textarea name="description" placeholder="Description"></textarea><input name="image" placeholder="Image URL (optional)"><input name="order" type="number" placeholder="Display order (1, 2, 3...)"><button>Save</button></form><div id="mg-categories"></div></div>
+
+<div data-sec="packages"><h3>Add Package</h3><form class="card" onsubmit="add(event,'packages')"><input name="name" placeholder="Package name" required><input name="items" placeholder="Included items"><input name="normal" type="number" min="0" placeholder="Normal price"><input name="price" type="number" min="0" placeholder="Package price" required><label class="tag">Valid until</label><input name="validity" type="date"><input name="conditions" placeholder="Package conditions (optional)"><input name="options" placeholder="Customisation options (optional)"><button>Save</button></form><div id="mg-packages"></div></div>
+
+<div data-sec="offers"><h3>Add Offer / Coupon</h3><form class="card" onsubmit="add(event,'offers')"><input name="title" placeholder="Title" required><input name="code" placeholder="Coupon code"><input name="details" placeholder="Details"><input name="image" placeholder="Banner image URL (optional)"><select name="type"><option value="percent">Percent %</option><option value="fixed">Fixed amount (Rs)</option></select><input name="value" type="number" min="0" placeholder="Discount value"><input name="min" type="number" min="0" placeholder="Minimum spend"><label class="tag">Start date</label><input name="start" type="date"><label class="tag">Expiry date</label><input name="expiry" type="date"><input name="limit" type="number" min="1" placeholder="Usage limit (optional)"><input name="eligible" placeholder="Eligible categories or product names, comma separated (empty = all)"><button>Save</button></form><div id="mg-offers"></div></div>
+
+<div data-sec="orders"><h3>Orders</h3><div class="fl"><input id="oq" placeholder="Search no / name / phone" oninput="renderOrders()"><select id="os" onchange="renderOrders()"><option value="">All statuses</option><option>Pending</option><option>Confirmed</option><option>Processing</option><option>Ready / Dispatched</option><option>Completed</option><option>Cancelled</option></select><input id="ofrom" type="date" onchange="renderOrders()"><input id="oto" type="date" onchange="renderOrders()"></div><div class="wrap"><table id="orders"></table></div></div>
+
+<div data-sec="enquiries"><h3>Enquiries</h3><div class="fl"><input id="eq" placeholder="Search name / phone / message" oninput="renderEnq()"><select id="es" onchange="renderEnq()"><option value="">All statuses</option><option>New</option><option>In Progress</option><option>Responded</option><option>Closed</option></select></div><div class="wrap"><table id="enq"></table></div></div>
+
+<div data-sec="customers"><h3>Customers</h3><input id="cq" placeholder="Search name / phone / email" oninput="renderCust()"><div class="wrap"><table id="cust"></table></div></div>
+
+<div data-sec="reviews"><h3>Reviews</h3><div class="wrap"><table id="revs"></table></div></div>
+
 <div data-sec="content"><h3>Site Content</h3><form id="sf" class="card" onsubmit="saveS(event)">
 <input name="heroTitle" placeholder="Homepage headline"><input name="heroText" placeholder="Homepage short description"><input name="banner" placeholder="Homepage banner image URL">
 <textarea name="about" placeholder="About us"></textarea><input name="address" placeholder="Shop address"><input name="phone" placeholder="Phone / WhatsApp"><input name="whatsapp" placeholder="WhatsApp number (e.g. 923001234567)"><input name="email" placeholder="Business email"><input name="hours" placeholder="Opening hours">
 <input name="facebook" placeholder="Facebook page link"><input name="instagram" placeholder="Instagram link"><input name="map" placeholder="Google Maps link">
 <textarea name="faq" placeholder="FAQs"></textarea><textarea name="privacy" placeholder="Privacy Policy"></textarea><textarea name="terms" placeholder="Terms & Conditions"></textarea><textarea name="returns" placeholder="Return / Exchange Policy"></textarea><button>Save content</button></form></div>
-<div data-sec="reviews"><h3>Reviews</h3><table id="revs"></table></div>
-<div data-sec="reports"><h3>Reports</h3><div id="rep" class="grid"></div><br><button onclick="csv()">Download orders CSV</button></div>
+
+<div data-sec="settings"><h3>Store Settings</h3><form id="stf" class="card" onsubmit="saveStore(event)"><input name="businessName" placeholder="Business name"><input name="logo" placeholder="Logo image URL"><input name="currency" placeholder="Currency label (e.g. Rs)"><input name="deliveryFee" type="number" min="0" placeholder="Delivery fee (0 = none)"><input name="freeAbove" type="number" min="0" placeholder="Free delivery above this amount (0 = never)"><input name="tax" type="number" min="0" step="0.1" placeholder="Tax % (0 = none)"><button>Save settings</button></form></div>
+
+<div data-sec="reports"><h3>Reports</h3><div class="fl noprint"><div><label class="tag">From</label><input id="rf" type="date" onchange="renderReports()"></div><div><label class="tag">To</label><input id="rt" type="date" onchange="renderReports()"></div></div>
+<div id="rep" class="grid"></div><br><button onclick="csv()">Download orders CSV</button> <button onclick="printRep()" style="background:var(--p)">Print / Save as PDF</button></div>
+
+<div data-sec="staff"><h3>Staff &amp; Roles</h3><form class="card" onsubmit="addStaff(event)"><input name="name" placeholder="Full name" required><input name="email" type="email" placeholder="Login email" required><input name="password" type="password" placeholder="Temporary password (min 6)" required minlength="6"><select name="role"><option>Manager</option><option>Support</option><option>Administrator</option></select><button>Create staff account</button></form><br><div class="wrap"><table id="stafft"></table></div></div>
+
+<div data-sec="activity"><h3>Activity Log</h3><div class="wrap"><table id="acts"></table></div></div>
 </div></main>
+<datalist id="catlist"></datalist>
+<dialog id="dlg"></dialog>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="js/firebase-config.js"></script><script>
-firebase.initializeApp(FIREBASE_CONFIG);const db=firebase.firestore(),$=s=>document.querySelector(s);
-// Escape anything typed by customers before putting it into HTML
+firebase.initializeApp(FIREBASE_CONFIG);
+const db=firebase.firestore(),auth=firebase.auth(),$=s=>document.querySelector(s);
 const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-// Which admin sections each staff role may see (real enforcement = Firestore rules)
+const money=n=>'Rs '+Number(n||0).toLocaleString();
+const ALL=['dashboard','products','categories','packages','offers','orders','enquiries','customers','reviews','content','settings','reports','staff','activity'];
+const LABEL={dashboard:'Dashboard',products:'Products',categories:'Categories',packages:'Packages',offers:'Offers',orders:'Orders',enquiries:'Enquiries',customers:'Customers',reviews:'Reviews',content:'Site Content',settings:'Settings',reports:'Reports',staff:'Staff & Roles',activity:'Activity Log'};
+// Which admin sections each role may see (real enforcement = Firestore rules)
 const ROLES={
- Administrator:['dashboard','products','packages','offers','orders','enquiries','customers','content','reviews','reports'],
- Manager:['dashboard','products','packages','offers','orders','enquiries','customers','reviews','reports'],
+ Administrator:ALL,
+ Manager:['dashboard','products','categories','packages','offers','orders','enquiries','customers','reviews','reports'],
  Support:['dashboard','orders','enquiries']
 };
-let ME=null;
+const DCOLS=['products','categories','packages','offers','orders','enquiries','customers','reviews','staff','activity'];
+let ME=null,DATA={},CURSEC='dashboard';
+const RENDERS=[];
 const can=s=>!!ME&&ME.allowed.includes(s);
-function doLogin(){$('#loginMsg').textContent='';firebase.auth().signInWithEmailAndPassword($('#em').value,$('#pw').value).catch(e=>$('#loginMsg').textContent=e.message)}
-firebase.auth().onAuthStateChanged(async u=>{
+function go(s){if(!can(s))s='dashboard';CURSEC=s;
+ document.querySelectorAll('[data-sec]').forEach(el=>el.style.display=el.dataset.sec===s?'':'none');
+ document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));scrollTo(0,0)}
+function showDlg(h){const d=$('#dlg');d.innerHTML=h;if(!d.open)d.showModal()}
+function closeDlg(){$('#dlg').close()}
+function logAct(a,d){if(!ME)return;db.collection('activity').add({who:ME.name,role:ME.role,action:a,detail:d||'',date:new Date().toISOString()}).catch(()=>{})}
+function doLogin(){$('#loginMsg').textContent='';auth.signInWithEmailAndPassword($('#em').value,$('#pw').value).catch(e=>$('#loginMsg').textContent=e.message)}
+async function fetchAll(){
+ await Promise.all(DCOLS.map(async c=>{
+  DATA[c]=[];if(!can(c))return;
+  try{let q=db.collection(c);if(c==='activity')q=q.orderBy('date','desc').limit(100);
+   DATA[c]=(await q.get()).docs.map(d=>({id:d.id,...d.data()}))}catch(e){console.error(c,e.message)}
+ }));
+}
+async function refresh(){await fetchAll();RENDERS.forEach(f=>{try{f()}catch(e){console.error(e)}})}
+auth.onAuthStateChanged(async u=>{
  ME=null;$('#panel').style.display='none';$('#login').style.display='block';
  if(!u)return;
  try{
   const d=await db.collection('staff').doc(u.uid).get();
   const x=d.exists?d.data():null;
   if(!x||x.active===false||!ROLES[x.role]){
-   await firebase.auth().signOut();
+   await auth.signOut();
    $('#loginMsg').textContent='Not authorised. This account is not a staff account.';return;
   }
   ME={role:x.role,name:x.name||u.email,allowed:ROLES[x.role]};
  }catch(e){
-  await firebase.auth().signOut();
+  await auth.signOut();
   $('#loginMsg').textContent='Could not verify staff access: '+e.message;return;
  }
  $('#login').style.display='none';$('#panel').style.display='block';
  $('#who').textContent=ME.name+' ('+ME.role+')';
- document.querySelectorAll('[data-sec]').forEach(el=>el.style.display=can(el.dataset.sec)?'':'none');
- refresh();loadX();
+ $('#nav').innerHTML=ME.allowed.map(s=>`<button data-s="${s}" onclick="go('${s}')">${LABEL[s]}</button>`).join('');
+ go('dashboard');refresh();
 });
 async function add(e,c){e.preventDefault();if(!can(c))return alert('You do not have permission');
- const o=Object.fromEntries(new FormData(e.target));['price','salePrice','normal','value','min'].forEach(k=>{if(o[k])o[k]=+o[k];else delete o[k]});
+ const o=Object.fromEntries(new FormData(e.target));
+ ['price','salePrice','normal','value','min','limit','order'].forEach(k=>{if(o[k]!==undefined&&o[k]!=='')o[k]=+o[k];else delete o[k]});
  o.date=new Date().toISOString();
  if(c==='products'){o.stock=true;o.published=true;o.featured=!!o.featured}else o.active=true;
- try{await db.collection(c).add(o);e.target.reset();alert('Saved');refresh()}catch(er){alert(er.message)}}
-async function refresh(){
- const g=async(c,s)=>{if(!can(s))return[];try{return(await db.collection(c).get()).docs.map(d=>({id:d.id,...d.data()}))}catch(e){return[]}};
- const [p,o,q,cu]=await Promise.all([g('products','products'),g('orders','orders'),g('enquiries','enquiries'),g('customers','customers')]);
- $('#cust').innerHTML='<tr><th>Name</th><th>Phone</th><th>Email</th></tr>'+cu.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.phone)}</td><td>${esc(x.email)}</td></tr>`).join('');
- const cards=[];if(can('products'))cards.push(['Products',p.length]);if(can('orders'))cards.push(['Orders',o.length]);if(can('enquiries'))cards.push(['Enquiries',q.length]);
- $('#stats').innerHTML=cards.map(x=>`<div class="card"><h2>${x[1]}</h2>${x[0]}</div>`).join('');
- const st=['Pending','Confirmed','Processing','Ready / Dispatched','Completed','Cancelled'];
- $('#orders').innerHTML='<tr><th>No</th><th>Customer</th><th>Total</th><th>Status</th></tr>'+o.map(x=>`<tr><td>${esc(x.orderNo)}</td><td>${esc(x.name)}<br>${esc(x.phone)}</td><td>${esc(x.total)}</td><td><select onchange="upd('orders','${esc(x.id)}',this.value)">${st.map(s=>`<option ${s==x.status?'selected':''}>${s}</option>`).join('')}</select></td></tr>`).join('');
- $('#enq').innerHTML='<tr><th>From</th><th>Type / Message</th><th>Status</th></tr>'+q.map(x=>`<tr><td>${esc(x.name)}<br>${esc(x.phone)}</td><td>${esc(x.type)}: ${esc(x.message)}</td><td><select onchange="upd('enquiries','${esc(x.id)}',this.value)">${['New','In Progress','Responded','Closed'].map(s=>`<option ${s==x.status?'selected':''}>${s}</option>`).join('')}</select></td></tr>`).join('')}
-function upd(c,id,s){if(!can(c))return alert('You do not have permission');db.collection(c).doc(id).update({status:s}).catch(e=>alert(e.message))}
+ if(c==='offers')o.used=0;
+ try{await db.collection(c).add(o);e.target.reset();logAct('Added '+c.slice(0,-1),o.name||o.title||'');alert('Saved');refresh()}catch(er){alert(er.message)}}
 </script><script src="js/admin-extra.js"></script><script src="js/admin-manage.js"></script></body></html>
