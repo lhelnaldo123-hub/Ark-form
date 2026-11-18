@@ -15,27 +15,16 @@
 <!-- LOGGED IN -->
 <div id="in" style="display:none">
  <div class="acct-hero"><div class="av" id="av">A</div><div class="who"><b id="hn"></b><span id="he"></span></div><button class="btn-out" onclick="doLogout()">Log out</button></div>
- <div class="atabs" id="atabs"><button data-t="profile" onclick="showTab('profile')">👤 Profile</button><button data-t="track" onclick="showTab('track')">📍 Track Order</button><button data-t="orders" onclick="showTab('orders')">📦 Past Orders</button><button data-t="inbox" onclick="showTab('inbox')">🔔 Inbox<span class="nb" style="display:none"></span></button><button data-t="addresses" onclick="showTab('addresses')">📍 Addresses</button></div>
+ <div class="atabs" id="atabs"><button data-t="profile" onclick="showTab('profile')">👤 Profile</button><button data-t="orders" onclick="showTab('orders')">📦 My Orders</button><button data-t="addresses" onclick="showTab('addresses')">📍 Addresses</button></div>
 
  <div id="t-profile">
   <div class="card"><h3 style="margin-top:0">My Profile</h3><input id="pn" placeholder="Name"><input id="pph" type="tel" placeholder="Phone"><input id="pa" placeholder="Default delivery address">
   <button onclick="saveP()">Save profile</button><p id="pmsg" class="msg"></p></div>
  </div>
 
- <div id="t-track">
-  <h3 style="margin-top:0">Track your order</h3>
-  <div id="trackList"><p>Loading...</p></div>
- </div>
-
  <div id="t-orders">
-  <h3 style="margin-top:0">Past orders</h3>
-  <p class="tag" style="margin-top:-6px">Delivered and cancelled orders. Review, return or reorder from here.</p>
+  <h3 style="margin-top:0">My orders</h3>
   <div id="ords"><p>Loading...</p></div>
- </div>
-
- <div id="t-inbox">
-  <h3 style="margin-top:0">Inbox</h3>
-  <div id="inboxList"><p>Loading...</p></div>
  </div>
 
  <div id="t-addresses">
