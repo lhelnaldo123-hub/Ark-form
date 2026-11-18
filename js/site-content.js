@@ -1,11 +1,7 @@
 const waLink = v => { v = String(v || '').trim(); if (/^https?:\/\//i.test(v)) return v; const d = v.replace(/\D/g, ''); return d ? 'https://wa.me/' + d : ''; };
 (async () => {
-  let s = {};
-  try { s = (await db.collection('settings').doc('site').get()).data() || {}; } catch (e) {}
-  if (s.heroTitle) $('#heroTitle').textContent = s.heroTitle;
-  if (s.heroText) $('#heroText').textContent = s.heroText;
-  const bn = safeUrl(s.banner);
-  if (bn) $('#hero').style.backgroundImage = `linear-gradient(rgba(31,58,95,.78),rgba(42,157,143,.78)),url("${bn.replace(/["')\\\s]/g, c => encodeURIComponent(c))}")`;
+  const s = await SITEP;
+  if (s.announce) { const e = $('#strip'); e.textContent = s.announce; e.style.display = ''; }
   if (s.about) $('#aboutText').textContent = s.about;
   const rows = [['Address', s.address], ['Phone / WhatsApp', s.phone], ['Email', s.email], ['Hours', s.hours]].filter(x => x[1]);
   if (rows.length) {
@@ -16,7 +12,7 @@ const waLink = v => { v = String(v || '').trim(); if (/^https?:\/\//i.test(v)) r
   $('#fSocial').innerHTML = links.length ? '<h4 style="margin-top:12px">Follow us</h4>' + links.map(x => `<a href="${esc(x[1])}" target="_blank" rel="noopener">${x[0]}</a>`).join('') : '';
   $('#cSocial').innerHTML = links.map(x => `<a class="btn" style="margin:0 6px 6px 0" href="${esc(x[1])}" target="_blank" rel="noopener">${x[0]}</a>`).join('');
   const m = safeUrl(s.map);
-  $('#mapLink').innerHTML = m ? `<a class="btn" style="background:var(--p)" href="${esc(m)}" target="_blank" rel="noopener">📍 View on map</a>` : '';
+  $('#mapLink').innerHTML = m ? `<a class="btn dk" href="${esc(m)}" target="_blank" rel="noopener">📍 View on map</a>` : '';
   [['faqBox', s.faq], ['privBox', s.privacy], ['termsBox', s.terms], ['retBox', s.returns]].forEach(([id, v]) => {
     if (v) $('#' + id).innerHTML = `<p style="white-space:pre-wrap">${esc(v)}</p>`;
   });
@@ -24,7 +20,7 @@ const waLink = v => { v = String(v || '').trim(); if (/^https?:\/\//i.test(v)) r
   try {
     const r = (await db.collection('reviews').where('approved', '==', true).get()).docs.map(d => d.data());
     $('#rev').innerHTML = r.length ? r.map(x => { const n = Math.min(5, Math.max(0, +x.rating || 0));
-      return `<div class="card"><div>${'★'.repeat(n)}${'☆'.repeat(5 - n)}</div><p>${esc(x.comment)}</p><b>${esc(x.name)}</b></div>`; }).join('') : '<p>No reviews yet.</p>';
+      return `<div class="rv"><div class="stars">${'★'.repeat(n)}${'☆'.repeat(5 - n)}</div><p>${esc(x.comment)}</p><b>${esc(x.name)}</b></div>`; }).join('') : '<p>No reviews yet.</p>';
   } catch (e) {}
 })();
 firebase.auth().onAuthStateChanged(u => {
