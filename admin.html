@@ -31,11 +31,12 @@ form.card{max-width:700px}
 label.btn{display:inline-block;margin:0}
 #dlg{max-width:580px;width:94%;border:0;border-radius:16px;padding:18px;max-height:90vh;overflow:auto;box-shadow:0 10px 40px #0005}
 #dlg::backdrop{background:#0008}
+.tl{list-style:none;margin:6px 0;padding:0 0 0 12px;border-left:2px solid #d5d9e2}.tl li{margin:4px 0;font-size:13px}
 @media print{header,#nav,.noprint,button{display:none!important}}
 </style></head><body class="adm">
 <header><b>ARK Admin Panel</b><a href="index.html">View site</a></header><main>
 <div id="login" class="card"><h3 style="margin-top:0">Admin Login</h3><input id="em" type="email" placeholder="Email"><input id="pw" type="password" placeholder="Password"><button onclick="doLogin()">Login</button>
-<p id="loginMsg" style="color:#b00020"></p></div>
+<p><a href="#" onclick="forgot();return false">Forgot password?</a></p><p id="loginMsg" style="color:#b00020"></p></div>
 <div id="panel" style="display:none">
 <p><b id="who"></b> <button class="sm dk" onclick="auth.signOut()">Logout</button></p>
 <div id="nav"></div>
@@ -60,7 +61,7 @@ label.btn{display:inline-block;margin:0}
 <div class="imgw" data-name="image" data-max="1200" data-label="Banner photo"></div>
 <input name="btn" placeholder="Button text (e.g. Shop now)"><input name="link" placeholder="Button link: #products, #offers, #packages or a web address"><input name="order" type="number" placeholder="Display order (1, 2, 3...)"><button>Save banner</button></form><div id="mg-banners"></div></div>
 
-<div data-sec="packages"><h3>Add Package</h3><form class="card" onsubmit="add(event,'packages')"><input name="name" placeholder="Package name" required><input name="items" placeholder="Included items"><input name="normal" type="number" min="0" placeholder="Normal price"><input name="price" type="number" min="0" placeholder="Package price" required><label class="tag">Valid until</label><input name="validity" type="date"><input name="conditions" placeholder="Package conditions (optional)"><input name="options" placeholder="Customisation options (optional)"><button>Save</button></form><div id="mg-packages"></div></div>
+<div data-sec="packages"><h3>Add Package</h3><form class="card" onsubmit="add(event,'packages')"><input name="name" placeholder="Package name" required><input name="items" placeholder="Included items"><input name="normal" type="number" min="0" placeholder="Normal price"><input name="price" type="number" min="0" placeholder="Package price" required><label class="tag">Valid until</label><input name="validity" type="date"><input name="conditions" placeholder="Package conditions (optional)"><input name="options" placeholder="Customisation options (optional)"><label class="tag"><input type="checkbox" name="featured" style="width:auto;margin-right:6px">Featured package</label><br><button>Save</button></form><div id="mg-packages"></div></div>
 
 <div data-sec="offers"><h3>Add Offer / Coupon</h3><form class="card" onsubmit="add(event,'offers')"><input name="title" placeholder="Title" required><input name="code" placeholder="Coupon code"><input name="details" placeholder="Details">
 <div class="imgw" data-name="image" data-max="1200" data-label="Offer photo (optional)"></div>
@@ -77,11 +78,11 @@ label.btn{display:inline-block;margin:0}
 <div data-sec="content"><h3>Site Content</h3><form id="sf" class="card" onsubmit="saveS(event)">
 <input name="announce" placeholder="Announcement strip at the very top of the shop (optional)">
 <input name="heroTitle" placeholder="Default slide headline (used when no banners are added)"><input name="heroText" placeholder="Default slide short description"><input name="banner" placeholder="Default slide background image link (optional)">
-<textarea name="about" placeholder="About us"></textarea><input name="address" placeholder="Shop address"><input name="phone" placeholder="Phone / WhatsApp"><input name="whatsapp" placeholder="WhatsApp number (e.g. 923001234567)"><input name="email" placeholder="Business email"><input name="hours" placeholder="Opening hours">
+<textarea name="about" placeholder="About us"></textarea><textarea name="mission" rows="3" placeholder="Mission and values (About page, optional)"></textarea><textarea name="highlights" rows="3" placeholder="Business highlights - one per line:  Title | description"></textarea><textarea name="why" rows="3" placeholder="Why choose ARK Form Center - one per line:  Title | description"></textarea><textarea name="testimonials" rows="3" placeholder="Testimonials - ONLY genuine ones, one per line:  Customer name | what they said"></textarea><input name="ctaTitle" placeholder="Home call-to-action: headline"><input name="ctaText" placeholder="Home call-to-action: short text"><input name="ctaBtn" placeholder="Home call-to-action: button text"><input name="ctaLink" placeholder="Home call-to-action: link (#contact, #products or a web address)"><input name="address" placeholder="Shop address"><input name="phone" placeholder="Phone / WhatsApp"><input name="whatsapp" placeholder="WhatsApp number (e.g. 923001234567)"><input name="email" placeholder="Business email"><input name="hours" placeholder="Opening hours">
 <input name="facebook" placeholder="Facebook page link"><input name="instagram" placeholder="Instagram link"><input name="map" placeholder="Google Maps link">
 <textarea name="faq" placeholder="FAQs"></textarea><textarea name="privacy" placeholder="Privacy Policy"></textarea><textarea name="terms" placeholder="Terms & Conditions"></textarea><textarea name="returns" placeholder="Return / Exchange Policy"></textarea><button>Save content</button></form></div>
 
-<div data-sec="settings"><h3>Store Settings</h3><form id="stf" class="card" onsubmit="saveStore(event)"><input name="businessName" placeholder="Business name"><input name="logo" placeholder="Logo image link"><input name="currency" placeholder="Currency label (e.g. Rs)"><input name="deliveryFee" type="number" min="0" placeholder="Delivery fee (0 = none)"><input name="freeAbove" type="number" min="0" placeholder="Free delivery above this amount (0 = never)"><input name="tax" type="number" min="0" step="0.1" placeholder="Tax % (0 = none)"><button>Save settings</button></form></div>
+<div data-sec="settings"><h3>Store Settings</h3><form id="stf" class="card" onsubmit="saveStore(event)"><input name="businessName" placeholder="Business name"><input name="logo" placeholder="Logo image link"><input name="currency" placeholder="Currency label (e.g. Rs)"><input name="deliveryFee" type="number" min="0" placeholder="Delivery fee (0 = none)"><input name="freeAbove" type="number" min="0" placeholder="Free delivery above this amount (0 = never)"><input name="tax" type="number" min="0" step="0.1" placeholder="Tax % (0 = none)"><input name="paymentMethods" placeholder="Payment methods approved by the business, comma separated (e.g. Cash on delivery, Pay at shop)"><button>Save settings</button></form></div>
 
 <div data-sec="reports"><h3>Reports</h3><div class="fl noprint"><div><label class="tag">From</label><input id="rf" type="date" onchange="renderReports()"></div><div><label class="tag">To</label><input id="rt" type="date" onchange="renderReports()"></div></div>
 <div id="rep" class="grid"></div><br><button onclick="csv()">Download orders CSV</button> <button class="dk" onclick="printRep()">Print / Save as PDF</button></div>
@@ -118,6 +119,7 @@ function go(s){if(!can(s))s='dashboard';CURSEC=s;
 function showDlg(h){const d=$('#dlg');d.innerHTML=h;if(!d.open)d.showModal()}
 function closeDlg(){$('#dlg').close()}
 function logAct(a,d){if(!ME)return;db.collection('activity').add({who:ME.name,role:ME.role,action:a,detail:d||'',date:new Date().toISOString()}).catch(()=>{})}
+function forgot(){const m=($('#em').value||'').trim(),l=$('#loginMsg');if(!m){l.style.color='#b00020';l.textContent='Type your email in the box above first.';return}auth.sendPasswordResetEmail(m).then(()=>{l.style.color='#1b7f3b';l.textContent='Password reset link sent to your email.'}).catch(e=>{l.style.color='#b00020';l.textContent=e.message})}
 function doLogin(){$('#loginMsg').textContent='';auth.signInWithEmailAndPassword($('#em').value,$('#pw').value).catch(e=>$('#loginMsg').textContent=e.message)}
 async function fetchAll(){
  await Promise.all(DCOLS.map(async c=>{
@@ -153,5 +155,6 @@ async function add(e,c){e.preventDefault();if(!can(c))return alert('You do not h
  o.date=new Date().toISOString();
  if(c==='products'){o.stock=true;o.published=true;o.featured=!!o.featured}else o.active=true;
  if(c==='offers')o.used=0;
+ if(c==='packages')o.featured=!!o.featured;
  try{await db.collection(c).add(o);e.target.reset();initImgs(e.target);logAct('Added '+c.slice(0,-1),o.name||o.title||'');alert('Saved');refresh()}catch(er){alert(er.message)}}
 </script><script src="js/admin-images.js"></script><script src="js/admin-extra.js"></script><script src="js/admin-manage.js"></script></body></html>
