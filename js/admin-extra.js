@@ -1,19 +1,53 @@
-// ---- Part 2: add the new admin controls without editing admin.html ----
+// ---- Part 3: roles, dispatch board and customer messages (added without editing admin.html) ----
 let SETS={};
 (function(){
+ const l=document.createElement('link');l.rel='stylesheet';l.href='css/extra.css';document.head.appendChild(l);
+ // new role + new Dispatch Board section
+ LABEL.board='Dispatch Board';
+ ROLES.Dispatcher=['board','orders'];
+ ALL.splice(1,0,'board');ROLES.Manager.splice(1,0,'board');ROLES.Support.splice(1,0,'board');
+ $('#panel').insertAdjacentHTML('beforeend','<div data-sec="board"><h3>Dispatch Board</h3><div id="bchips" class="chips"></div><div id="blist"></div></div>');
+ $('#nav').insertAdjacentHTML('afterend','<div id="wel"></div>');
+ const rs=document.querySelector('[data-sec="staff"] select[name="role"]');if(rs)rs.add(new Option('Dispatcher'));
  const os=document.getElementById('os');
- if(os&&![...os.options].some(o=>o.text==='Delivered')){
-  [...os.options].filter(o=>o.text==='Completed').forEach(o=>o.remove());
-  ['Delivered','Return requested'].forEach(t=>os.add(new Option(t)));
- }
+ if(os)os.innerHTML='<option value="">All statuses</option>'+['Pending','Confirmed','Processing','In warehouse','Shipped','Ready for pickup','Delivered','Picked up','Cancelled','Return requested'].map(t=>`<option>${t}</option>`).join('');
  const f=document.getElementById('stf');
  if(f&&!f.elements.returnDays){
-  f.querySelector('button').insertAdjacentHTML('beforebegin','<h4 style="margin-top:14px">Orders: cancel &amp; return rules</h4><label class="tag">Customers can return an order within this many days after delivery (0 = returns not allowed)</label><input name="returnDays" type="number" min="0" placeholder="Return window in days (default 7)"><label class="tag">Customers can cancel their own order while it is</label><select name="cancelUntil"><option value="Pending">Pending only</option><option value="Confirmed" selected>Pending or Confirmed</option></select>');
+  f.querySelector('button').insertAdjacentHTML('beforebegin','<h4 style="margin-top:14px">Orders: cancel &amp; return rules</h4><label class="tag">Customers can return an order within this many days after delivery / pickup (0 = returns not allowed)</label><input name="returnDays" type="number" min="0" placeholder="Return window in days (default 7)"><label class="tag">Customers can cancel their own order while it is</label><select name="cancelUntil"><option value="Pending">Pending only</option><option value="Confirmed" selected>Pending or Confirmed</option></select>');
  }
+ // a Dispatcher lands on the Dispatch Board instead of the dashboard
+ const _go=go;go=function(s){if(ME&&ME.role==='Dispatcher'&&(s==='dashboard'||!can(s)))s='board';_go(s)};
 })();
+
 const fdate=d=>String(d||'').slice(0,10);
 const byDate=(a,b)=>(b.date||'').localeCompare(a.date||'');
-const OST=['Pending','Confirmed','Processing','Ready / Dispatched','Delivered','Cancelled'],PAY=['Unpaid','Paid','Partially paid','Refunded'],EST=['New','In Progress','Responded','Closed'];
+const OST=['Pending','Confirmed','Processing','In warehouse','Shipped','Ready for pickup','Delivered','Picked up','Cancelled'],PAY=['Unpaid','Paid','Partially paid','Refunded'],EST=['New','In Progress','Responded','Closed'];
+const FLOW_D=['Pending','Confirmed','Processing','In warehouse','Shipped','Delivered'],FLOW_P=['Pending','Confirmed','Processing','In warehouse','Ready for pickup','Picked up'];
+const flowOf=o=>o.method==='Pickup'?FLOW_P:FLOW_D;
+const normSt=o=>o.status==='Ready / Dispatched'?(o.method==='Pickup'?'Ready for pickup':'Shipped'):o.status==='Completed'?flowOf(o)[5]:o.status;
+const DISP=['In warehouse','Shipped','Ready for pickup','Delivered','Picked up'];   // steps a Dispatcher may set
+const stagesFor=o=>{const f=flowOf(o);return ME&&ME.role==='Dispatcher'?f.filter(s=>DISP.includes(s)||s===normSt(o)):f};
+const MSG={Confirmed:['Order confirmed ✅','Your order {no} has been confirmed. We are getting it ready.'],Processing:['Packing your order 📦','We are packing your order {no}.'],'In warehouse':['At our warehouse 🏭','Your order {no} is in our warehouse and being prepared.'],Shipped:['Your order is on its way 🚚','Your order {no} has been shipped and is on its way to you.'],'Ready for pickup':['Ready for pickup 🏬','Your order {no} is ready for pickup. Please bring your order number.'],Delivered:['Delivered 🎉','Your order {no} has been delivered. Open My Orders to review your items.'],'Picked up':['Picked up ✅','Thank you for collecting order {no}! Open My Orders to review your items.']};
+async function sendMsg(x,title,body,kind){
+ if(!x.uid)return true;
+ try{await db.collection('messages').add({uid:x.uid,orderId:x.id,orderNo:x.orderNo,title,body,kind:kind||'status',date:new Date().toISOString(),read:false,by:ME.name});return true}
+ catch(e){alert('Saved, but the customer message could not be sent: '+e.message);return false}
+}
+async function setStatus(id,s,custom,pay){
+ const x=DATA.orders.find(o=>o.id===id),now=new Date().toISOString(),u={status:s};
+ if(pay)u.payStatus=pay;
+ const changed=s!==x.status;
+ if(changed){u.history=firebase.firestore.FieldValue.arrayUnion({status:s,date:now,by:ME.name});if(s==='Delivered'||s==='Picked up')u.deliveredAt=now}
+ await db.collection('orders').doc(id).update(u);
+ logAct('Order '+x.orderNo,'Status '+s);
+ if(changed){const t=MSG[s];if(t||custom)await sendMsg(x,t?t[0]:'Order update',custom||t[1].replace('{no}',x.orderNo))}
+}
+async function sendCustom(id){
+ const x=DATA.orders.find(o=>o.id===id),t=($('#omsg').value||'').trim();
+ if(t.length<3)return alert('Type your message first');
+ if(!x.uid)return alert('This order was placed without an account, so there is no inbox to send to.');
+ if(await sendMsg(x,'Message about order '+x.orderNo,t,'custom')){logAct('Message to customer',x.orderNo);$('#omsg').value='';alert('Message sent to the customer inbox')}
+}
 const notesHtml=n=>(n||[]).map(x=>`<div class="note">${esc(x.text)}<br><span class="tag">${esc(x.by)} · ${esc(fdate(x.date))}</span></div>`).join('')||'<p class="tag">No notes yet</p>';
 const closeBtn='<hr><button type="button" style="background:#667" onclick="closeDlg()">Close</button>';
 
@@ -49,34 +83,43 @@ async function addNote(c,id,fld){
 function renderOrders(){
  if(!can('orders'))return;
  const q=($('#oq').value||'').toLowerCase(),s=$('#os').value,f=$('#ofrom').value,t=$('#oto').value;
- const l=DATA.orders.filter(o=>(!q||[o.orderNo,o.name,o.phone].join(' ').toLowerCase().includes(q))&&(!s||o.status===s||(s==='Delivered'&&o.status==='Completed')||(s==='Return requested'&&o.returnStatus==='Requested'))&&(!f||fdate(o.date)>=f)&&(!t||fdate(o.date)<=t)).sort(byDate);
- $('#orders').innerHTML='<tr><th>No</th><th>Date</th><th>Customer</th><th>Total</th><th>Status</th><th>Payment</th><th></th></tr>'+(l.length?l.map(x=>`<tr><td>${esc(x.orderNo)}</td><td>${esc(fdate(x.date))}</td><td>${esc(x.name)}<br>${esc(x.phone)}</td><td>${money(x.total)}</td><td>${esc(x.status)}${x.returnStatus?`<br><span class="tag" style="color:#b00020">Return: ${esc(x.returnStatus)}</span>`:''}</td><td>${esc(x.payStatus||'Unpaid')}</td><td><button class="sm" onclick="openOrder('${esc(x.id)}')">Open</button></td></tr>`).join(''):'<tr><td colspan=7>No orders found</td></tr>');
+ const l=DATA.orders.filter(o=>(!q||[o.orderNo,o.name,o.phone].join(' ').toLowerCase().includes(q))&&(!s||normSt(o)===s||(s==='Return requested'&&o.returnStatus==='Requested'))&&(!f||fdate(o.date)>=f)&&(!t||fdate(o.date)<=t)).sort(byDate);
+ $('#orders').innerHTML='<tr><th>No</th><th>Date</th><th>Customer</th><th>Total</th><th>Status</th><th>Payment</th><th></th></tr>'+(l.length?l.map(x=>`<tr><td>${esc(x.orderNo)}<br><span class="tag">${x.method==='Pickup'?'🏬 Pickup':'🚚 Delivery'}</span></td><td>${esc(fdate(x.date))}</td><td>${esc(x.name)}<br>${esc(x.phone)}</td><td>${money(x.total)}</td><td>${esc(x.status)}${x.returnStatus?`<br><span class="tag" style="color:#b00020">Return: ${esc(x.returnStatus)}</span>`:''}</td><td>${esc(x.payStatus||'Unpaid')}</td><td><button class="sm" onclick="openOrder('${esc(x.id)}')">Open</button></td></tr>`).join(''):'<tr><td colspan=7>No orders found</td></tr>');
 }
 function openOrder(id){
  const x=DATA.orders.find(o=>o.id===id);if(!x)return;
  const items=(x.items||[]).map(i=>`<tr><td>${esc(i.name)}${i.variant?' ('+esc(i.variant)+')':''}</td><td>${esc(i.qty)}</td><td>${money(i.price*i.qty)}</td></tr>`).join('');
- let sts=x.status==='Cancelled'?OST:OST.filter(s=>s!=='Cancelled');if(!sts.includes(x.status))sts=[x.status,...sts];
+ let sts=x.status==='Cancelled'?[...OST]:stagesFor(x);if(!sts.includes(x.status))sts=[x.status,...sts];const dsp=ME.role==='Dispatcher';
+ const tl=(x.history||[]).map(h=>`<li>${esc(h.status)} <span class="tag">${esc(String(h.date||'').slice(0,16).replace('T',' '))} · ${esc(h.by||'')}</span></li>`).join('');
  showDlg(`<h3 style="margin-top:0">Order ${esc(x.orderNo)}</h3>
- <p><b>${esc(x.name)}</b><br>${esc(x.phone)}${x.email?'<br>'+esc(x.email):''}<br>${esc(x.address)}<br><span class="tag">${esc(fdate(x.date))}</span></p>
+ <p><span class="mb" style="${x.method==='Pickup'?'background:#fff0d9;color:#8a4b00':''}">${x.method==='Pickup'?'🏬 Pickup':'🚚 Delivery'}</span></p>
+ <p><b>${esc(x.name)}</b><br>${esc(x.phone)}${x.email?'<br>'+esc(x.email):''}<br>${esc(x.address)}<br><span class="tag">${esc(fdate(x.date))}${x.uid?'':' · no account (no inbox)'}</span></p>
  ${x.notes?`<p class="tag">Customer note: ${esc(x.notes)}</p>`:''}
  <table><tr><th>Item</th><th>Qty</th><th>Amount</th></tr>${items}</table>
  <p>Subtotal ${money(x.subtotal??x.total)} · Discount ${money(x.discount)}${x.coupon?' ('+esc(x.coupon)+')':''}${+x.delivery?' · Delivery '+money(x.delivery):''}${+x.tax?' · Tax '+money(x.tax):''}<br><b>Total ${money(x.total)}</b> · ${esc(x.payment||'')}</p>
  <label class="tag">Order status</label><select id="ost">${sts.map(s=>`<option ${s===x.status?'selected':''}>${s}</option>`).join('')}</select>
- <label class="tag">Payment status</label><select id="opay">${PAY.map(s=>`<option ${s===(x.payStatus||'Unpaid')?'selected':''}>${s}</option>`).join('')}</select>
- <button onclick="saveOrder('${esc(x.id)}')">Save</button>
- ${x.status==='Cancelled'?`<p class="msg err">Cancelled${x.cancelReason?': '+esc(x.cancelReason):''}${x.cancelledBy?' (by '+esc(x.cancelledBy)+')':''}</p>`:`<hr><input id="ocr" placeholder="Reason for cancelling"><button style="background:#b00020" onclick="cancelOrder('${esc(x.id)}')">Cancel order</button>`}
+ <label class="tag">Payment status</label><select id="opay" ${dsp?'disabled':''}>${PAY.map(s=>`<option ${s===(x.payStatus||'Unpaid')?'selected':''}>${s}</option>`).join('')}</select>
+ <div class="mbox"><label class="tag">Message for the customer inbox (optional - for a status change it replaces the automatic message)</label><textarea id="omsg" rows="2" placeholder="e.g. Your parcel will arrive between 2pm and 5pm"></textarea></div>
+ <button onclick="saveOrder('${esc(x.id)}')">Save &amp; notify customer</button> <button class="dk" onclick="sendCustom('${esc(x.id)}')">Send message only</button>
+ ${tl?`<h4 style="margin-top:14px">Order timeline</h4><ul class="tl">${tl}</ul>`:''}
+ ${x.status==='Cancelled'?`<p class="msg err">Cancelled${x.cancelReason?': '+esc(x.cancelReason):''}${x.cancelledBy?' (by '+esc(x.cancelledBy)+')':''}</p>`:dsp?'':`<hr><input id="ocr" placeholder="Reason for cancelling"><button style="background:#b00020" onclick="cancelOrder('${esc(x.id)}')">Cancel order</button>`}
  ${returnBlock(x)}
  <hr><h4>Internal notes</h4>${notesHtml(x.staffNotes)}
  <textarea id="onote" rows="2" placeholder="Add internal note"></textarea><button onclick="addNote('orders','${esc(x.id)}','onote')">Add note</button>${closeBtn}`);
 }
 async function saveOrder(id){
- const x=DATA.orders.find(o=>o.id===id),s=$('#ost').value,p=$('#opay').value,now=new Date().toISOString(),u={status:s,payStatus:p};
- if(s!==x.status){u.history=firebase.firestore.FieldValue.arrayUnion({status:s,date:now,by:ME.name});if(s==='Delivered')u.deliveredAt=now}
- try{await db.collection('orders').doc(id).update(u);logAct('Order '+x.orderNo,'Status '+s+', payment '+p);await refresh();openOrder(id)}catch(e){alert(e.message)}
+ const x=DATA.orders.find(o=>o.id===id),st=$('#ost').value,custom=($('#omsg').value||'').trim(),pay=ME.role==='Dispatcher'?null:$('#opay').value;
+ try{
+  if(st===x.status&&!pay&&!custom)return alert('Nothing changed');
+  if(st===x.status){if(pay&&pay!==(x.payStatus||'Unpaid'))await db.collection('orders').doc(id).update({payStatus:pay});if(custom)await sendCustom(id)}
+  else await setStatus(id,st,custom,pay);
+  await refresh();openOrder(id)
+ }catch(e){alert(e.message)}
 }
 // ---------- Returns ----------
 function returnBlock(x){
- const del=x.status==='Delivered'||x.status==='Completed';
+ if(ME&&ME.role==='Dispatcher')return '';
+ const del=['Delivered','Picked up','Completed'].includes(x.status);
  if(!x.returnStatus)return del?`<p class="tag">No return requested. Customers can return within ${+SETS.returnDays>=0&&SETS.returnDays!==undefined?+SETS.returnDays:7} days of delivery${x.deliveredAt?' (delivered '+esc(fdate(x.deliveredAt))+')':''}.</p>`:'';
  const c=x.returnStatus==='Rejected'?'#b00020':x.returnStatus==='Requested'?'#b8892f':'#1b7f3b';
  return `<hr><h4>Return request: <span style="color:${c}">${esc(x.returnStatus)}</span></h4><p class="tag">Asked on ${esc(fdate(x.returnRequestedAt))}</p><p style="white-space:pre-wrap">${esc(x.returnReason||'')}</p>${x.returnNote?`<p class="tag">Your reply: ${esc(x.returnNote)} (${esc(x.returnHandledBy||'')})</p>`:''}
@@ -94,7 +137,7 @@ async function cancelOrder(id){
  if(!confirm('Cancel this order? The record is kept.'))return;
  const x=DATA.orders.find(o=>o.id===id);
  try{await db.collection('orders').doc(id).update({status:'Cancelled',cancelReason:r,cancelledBy:ME.name,cancelledAt:new Date().toISOString(),history:firebase.firestore.FieldValue.arrayUnion({status:'Cancelled',date:new Date().toISOString(),by:ME.name})});
-  logAct('Cancelled order '+x.orderNo,r);await refresh();openOrder(id)}catch(e){alert(e.message)}
+  logAct('Cancelled order '+x.orderNo,r);await sendMsg(x,'Order cancelled','Your order '+x.orderNo+' was cancelled. Reason: '+r);await refresh();openOrder(id)}catch(e){alert(e.message)}
 }
 
 // ---------- Enquiries ----------
@@ -181,7 +224,7 @@ function renderReports(){
  const cpt=Object.entries(cp).map(([k,v])=>esc(k)+': '+v.n+' orders, '+money(v.d)+' off').join('<br>')||'-';
  const per={};ok.forEach(x=>{const k=x.uid||x.phone;if(k)per[k]=(per[k]||0)+1});
  const rep=Object.values(per).filter(n=>n>1).length,by=s=>o.filter(x=>x.status===s).length;
- const cards=[['Order value',money(val)],['Orders',o.length],['Pending orders',by('Pending')],['Delivered orders',by('Delivered')+by('Completed')],['Return requests',o.filter(x=>x.returnStatus).length],['Cancelled orders',by('Cancelled')],['Popular products',top],['Product enquiries',penq],['Coupon usage',cpt],['New customers',cu.length],['Repeat customers',rep],['New enquiries',q.filter(x=>x.status==='New').length],['In progress',q.filter(x=>x.status==='In Progress').length],['Responded / closed',q.filter(x=>x.status==='Responded'||x.status==='Closed').length]];
+ const cards=[['Order value',money(val)],['Orders',o.length],['Pending orders',by('Pending')],['Delivered orders',by('Delivered')+by('Picked up')+by('Completed')],['Return requests',o.filter(x=>x.returnStatus).length],['Cancelled orders',by('Cancelled')],['Popular products',top],['Product enquiries',penq],['Coupon usage',cpt],['New customers',cu.length],['Repeat customers',rep],['New enquiries',q.filter(x=>x.status==='New').length],['In progress',q.filter(x=>x.status==='In Progress').length],['Responded / closed',q.filter(x=>x.status==='Responded'||x.status==='Closed').length]];
  $('#rep').innerHTML=cards.map(x=>`<div class="card"><b>${x[1]}</b><br>${x[0]}</div>`).join('');
 }
 function csv(){
@@ -231,4 +274,38 @@ function renderActs(){
  if(!can('activity'))return;
  $('#acts').innerHTML='<tr><th>When</th><th>Who</th><th>Action</th></tr>'+(DATA.activity.length?DATA.activity.map(x=>`<tr><td>${esc(String(x.date||'').slice(0,16).replace('T',' '))}</td><td>${esc(x.who)}<br><span class="tag">${esc(x.role)}</span></td><td>${esc(x.action)}<br><span class="tag">${esc(x.detail)}</span></td></tr>`).join(''):'<tr><td colspan=3>No activity yet</td></tr>');
 }
-RENDERS.push(renderDash,renderOrders,renderEnq,renderCust,renderRevs,renderContent,renderSettings,renderReports,renderStaff,renderActs);
+RENDERS.push(renderWelcome,renderBoard,renderDash,renderOrders,renderEnq,renderCust,renderRevs,renderContent,renderSettings,renderReports,renderStaff,renderActs);
+
+// ---------- Role welcome banner ----------
+const ROLEINFO={Administrator:['👑','Full access: products, orders, staff, settings and reports.'],Manager:['📊','Run the shop: catalogue, offers, orders, customers and reports.'],Support:['🎧','Confirm order details and answer customer enquiries.'],Dispatcher:['🚚','Move orders through warehouse, shipping and pickup. Customers are notified automatically.']};
+function renderWelcome(){
+ const w=$('#wel');if(!w||!ME)return;const i=ROLEINFO[ME.role]||['👤',''];
+ w.innerHTML=`<div class="wel r-${esc(ME.role)}"><div class="wi">${i[0]}</div><div><b>Hello, ${esc(ME.name)}</b><span>${esc(ME.role)} · ${esc(i[1])}</span></div></div>`;
+}
+
+// ---------- Dispatch board ----------
+let BLANE='new';
+const LANES=[['new','🆕 To confirm',o=>normSt(o)==='Pending'],['prep','📦 Preparing',o=>['Confirmed','Processing'].includes(normSt(o))],['wh','🏭 In warehouse',o=>normSt(o)==='In warehouse'],['out','🚚 Out / ⏳ Ready',o=>['Shipped','Ready for pickup'].includes(normSt(o))],['ret','↩ Returns',o=>o.returnStatus==='Requested']];
+const nextOf=o=>{const f=flowOf(o),n=f[f.indexOf(normSt(o))+1];return n&&(ME.role!=='Dispatcher'||DISP.includes(n))?n:null};
+function setLane(k){BLANE=k;renderBoard()}
+function renderBoard(){
+ if(!can('board'))return;
+ const live=DATA.orders.filter(o=>!['Cancelled','Delivered','Picked up','Completed'].includes(o.status));
+ const lanes=LANES.filter(l=>ME.role!=='Dispatcher'||l[0]!=='ret'||false);
+ if(ME.role==='Dispatcher'&&!renderBoard.seen){BLANE='wh';renderBoard.seen=1}
+ if(!lanes.some(l=>l[0]===BLANE))BLANE=lanes[0][0];
+ const src=l=>l[0]==='ret'?DATA.orders.filter(l[2]):live.filter(l[2]);
+ $('#bchips').innerHTML=lanes.map(l=>`<button class="chip2 ${l[0]===BLANE?'on':''}" onclick="setLane('${l[0]}')">${l[1]}<em>${src(l).length}</em></button>`).join('');
+ const cur=lanes.find(l=>l[0]===BLANE),list=src(cur).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+ $('#blist').innerHTML=list.length?list.map(o=>{
+  const n=nextOf(o),pk=o.method==='Pickup';
+  return`<div class="bcard ${pk?'m-p':''}"><div class="bt"><b>${esc(o.orderNo)}</b><span class="mb">${pk?'🏬 Pickup':'🚚 Delivery'}</span></div>
+  <div><b>${esc(o.name)}</b> · ${esc(o.phone)}</div><div class="tag">${(o.items||[]).reduce((s,i)=>s+(+i.qty||0),0)} item(s) · ${money(o.total)} · ${esc(fdate(o.date))}</div>
+  <div class="tag">${pk?'Customer collects at the shop':'📍 '+esc(o.address)}</div>${o.returnStatus==='Requested'?'<div class="tag" style="color:#b00020">↩ Return requested</div>':''}
+  <div class="bact">${n&&BLANE!=='ret'?`<button class="go" onclick="quickMove('${esc(o.id)}')">Move to: ${esc(n)} →</button>`:''}<button class="sm dk" onclick="openOrder('${esc(o.id)}')">Open</button></div></div>`}).join(''):'<div class="empty">🎉 Nothing here right now.</div>';
+}
+async function quickMove(id){
+ const o=DATA.orders.find(x=>x.id===id),n=nextOf(o);if(!n)return;
+ if(!confirm('Move '+o.orderNo+' to "'+n+'"? The customer will get a message.'))return;
+ try{await setStatus(id,n);await refresh()}catch(e){alert(e.message)}
+}
