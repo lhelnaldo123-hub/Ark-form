@@ -2,14 +2,18 @@ firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.firestore();
 const $ = s => document.querySelector(s);
 const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-let SYM = 'Rs', SET = {};
+let SYM = 'Rs', SET = {}, SITE = {};
 const money = n => SYM + ' ' + Number(n || 0).toLocaleString();
 const today = () => new Date().toISOString().slice(0, 10);
 const safeUrl = u => /^https?:\/\//i.test(String(u || '').trim()) ? String(u).trim() : '';
+const imgSrc = u => { u = String(u || '').trim(); return /^(https?:\/\/|data:image\/)/i.test(u) ? u : ''; };
+const okLink = l => { l = String(l || '').trim(); return /^(#|https?:\/\/)/i.test(l) ? l : ''; };
 const validPhone = v => /^[+()\d\s-]{7,20}$/.test(v) && v.replace(/\D/g, '').length >= 7;
+const SITEP = db.collection('settings').doc('site').get().then(d => d.data() || {}).catch(() => ({}));
 let cart = []; try { cart = JSON.parse(localStorage.getItem('cart') || '[]'); } catch (e) {}
-let PRODUCTS = [], PACKAGES = [], OFFERS = [], CATS = [], coupon = null, READY = false, CUR = '';
-const COLORS = ['#2a9d8f', '#1f3a5f', '#e9c46a', '#e76f51', '#6a4c93', '#457b9d'];
+let PRODUCTS = [], PACKAGES = [], OFFERS = [], CATS = [], BANNERS = [], coupon = null, READY = false, CUR = '', CURP = null;
+let GAL = [], SELVAR = '', DQ = 1;
+const COLORS = ['#13294b', '#2b5c8a', '#9a6a14', '#7a2e3a', '#3d6b5a', '#5b4a86'];
 
 // Sample data shows until the admin adds real items (no real business facts invented)
 const sp = (n, c, price) => ({ id: 'd' + n, name: 'Sample Product ' + n, category: c, price, stock: true, description: 'Sample item - admin can replace', image: '' });
@@ -23,7 +27,7 @@ async function load(c) {
   catch (e) { return DEMO[c] || []; }
 }
 
-// ---------- small helpers ----------
+// ---------- helpers ----------
 let tt;
 function toast(t) {
   let e = $('#toast'); if (!e) { e = document.createElement('div'); e.id = 'toast'; e.className = 'toast'; document.body.appendChild(e); }
@@ -34,12 +38,15 @@ function fmsg(f, t, ok) {
   m.className = 'msg ' + (ok ? 'ok' : 'err'); m.textContent = t;
 }
 const eff = p => { const s = +p.salePrice, n = +p.price || 0; return s > 0 && s < n ? s : n; };
-const images = p => [...new Set([p.image, ...(Array.isArray(p.images) ? p.images : String(p.images || '').split(','))].map(s => String(s || '').trim()).filter(Boolean))];
+const pct = p => eff(p) && eff(p) < +p.price ? Math.round((1 - eff(p) / p.price) * 100) : 0;
+// photos: newline separated (also accepts old comma separated links and arrays)
+const splitImgs = s => (Array.isArray(s) ? s : String(s || '').split('\n')).flatMap(x => { x = String(x || '').trim(); return x.startsWith('data:') ? [x] : x.split(','); }).map(x => x.trim()).filter(x => imgSrc(x));
+const images = p => [...new Set([...splitImgs(p.image), ...splitImgs(p.images)])];
 const variants = p => String(p.variants || '').split(',').map(s => s.trim()).filter(Boolean);
-const short = t => { t = String(t || ''); return t.length > 90 ? t.slice(0, 90) + '…' : t; };
 const status = p => p.stock === false ? '<span class="badge out">Out of Stock</span>' : eff(p) ? '<span class="badge">In Stock</span>' : '<span class="badge">Enquire for Price</span>';
-const priceHtml = p => eff(p) ? (eff(p) < +p.price ? `<span class="old">${money(p.price)}</span>` : '') + `<span class="price">${money(eff(p))}</span>` : '<span class="price">Enquire for Price</span>';
-const img = p => { const i = images(p)[0]; return i ? `<img src="${esc(i)}" alt="">` : `<div class="ph" style="background:${COLORS[(p.name || '').length % 6]}">${esc((p.name || '?')[0])}</div>`; };
+const ph = (p, extra) => `<div class="ph" style="background:${COLORS[(p.name || '').length % 6]};${extra || ''}">${esc((p.name || '?')[0])}</div>`;
+const img = p => { const i = images(p)[0]; return i ? `<img loading="lazy" src="${esc(i)}" alt="${esc(p.name)}">` : ph(p); };
+const prc = p => eff(p) ? `<span class="pnow${pct(p) ? ' sale' : ''}">${money(eff(p))}</span>${pct(p) ? `<s>${money(p.price)}</s>` : ''}` : '<span class="pnow">Enquire for price</span>';
 const liveP = k => k.active !== false && (!k.validity || k.validity >= today());
 const liveO = o => o.active !== false && (!o.start || o.start <= today()) && (!o.expiry || o.expiry >= today());
 function sorted(list, mode) {
@@ -51,22 +58,28 @@ function sorted(list, mode) {
 }
 
 // ---------- cards ----------
-const buyBtn = p => p.stock === false ? '<button disabled>Out of Stock</button>'
-  : !eff(p) ? `<button onclick="quote('${esc(p.id)}')">Request a Quote</button>`
-  : `<button onclick="addCart('${esc(p.id)}')">Add to Cart</button>`;
-const pcard = p => `<div class="card"><a class="plain" href="#view/${esc(p.id)}">${img(p)}<h4>${esc(p.name)}</h4></a>
-  <div class="tag">${esc(p.category || '')} · ${status(p)}</div><div>${priceHtml(p)}</div><p>${esc(short(p.description))}</p>
-  <a class="btn" href="#view/${esc(p.id)}" style="background:var(--p)">Details</a> ${buyBtn(p)}</div>`;
-const pkcard = k => `<div class="card"><h4>${esc(k.name)}</h4><p>${esc(k.items)}</p>
-  <div>${+k.normal ? `<span class="old">${money(k.normal)}</span>` : ''}<span class="price">${money(k.price)}</span></div>
+const pcard = p => `<div class="pc"><a class="pimg" href="#view/${esc(p.id)}">${img(p)}${pct(p) ? `<span class="off">-${pct(p)}%</span>` : ''}${p.stock === false ? '<span class="so">Sold out</span>' : ''}</a>
+  <div class="pb"><a class="pn" href="#view/${esc(p.id)}">${esc(p.name)}</a><div class="pr">${prc(p)}</div><div class="pm">${esc(p.category || '')}</div>
+  ${p.stock === false ? '' : `<button class="pcart" onclick="quickAdd('${esc(p.id)}')" aria-label="Add to cart">🛒</button>`}</div></div>`;
+const pkcard = k => `<div class="dcard"><h4>${esc(k.name)}</h4><p>${esc(k.items)}</p>
+  <div class="prow"><span class="pnow sale">${money(k.price)}</span>${+k.normal ? `<s>${money(k.normal)}</s>` : ''}</div>
   ${+k.normal > +k.price ? `<p><span class="badge">Save ${money(k.normal - k.price)}</span></p>` : ''}
   ${k.validity ? `<p class="tag">Valid until ${esc(k.validity)}</p>` : ''}${k.conditions ? `<p class="tag">Conditions: ${esc(k.conditions)}</p>` : ''}${k.options ? `<p class="tag">Customisation: ${esc(k.options)}</p>` : ''}
-  <button onclick="enquirePkg('${esc(k.id)}')">Enquire / Request Package</button></div>`;
-const ocard = o => `<div class="card">${o.image ? `<img src="${esc(o.image)}" alt="">` : ''}<h4>${esc(o.title)}</h4><p>${esc(o.details || '')}</p>
-  <p class="price">${o.type === 'percent' ? (+o.value || 0) + '% off' : money(o.value) + ' off'}</p>${+o.min ? `<p class="tag">Minimum order ${money(o.min)}</p>` : ''}
+  <p><button onclick="enquirePkg('${esc(k.id)}')">Enquire / Request package</button></p></div>`;
+const ocard = o => `<div class="dcard">${imgSrc(o.image) ? `<img class="bn" src="${esc(imgSrc(o.image))}" alt="">` : ''}<h4>${esc(o.title)}</h4><p>${esc(o.details || '')}</p>
+  <p class="pnow sale">${o.type === 'percent' ? (+o.value || 0) + '% off' : money(o.value) + ' off'}</p>${+o.min ? `<p class="tag">Minimum order ${money(o.min)}</p>` : ''}
   ${o.eligible ? `<p class="tag">Applies to: ${esc(o.eligible)}</p>` : ''}
   <p class="tag">${o.start ? 'From ' + esc(o.start) + ' ' : ''}${o.expiry ? 'Until ' + esc(o.expiry) : ''}</p>
-  ${o.code ? `<p><b>Code: ${esc(o.code)}</b></p><p class="tag">Enter this code in your cart to get the discount.</p>` : ''}</div>`;
+  ${o.code ? `<span class="code">${esc(o.code)}</span><p class="tag">Enter this code in your cart to get the discount.</p>` : ''}</div>`;
+
+// ---------- menu ----------
+function openMenu() { $('#dr').classList.add('on'); $('#ov').classList.add('on'); document.body.classList.add('nolock'); }
+function closeMenu() { $('#dr').classList.remove('on'); $('#ov').classList.remove('on'); if (!$('#lb').classList.contains('on')) document.body.classList.remove('nolock'); }
+$('#dr').addEventListener('click', e => { if (e.target.closest('a')) closeMenu(); });
+function goSearch(e) {
+  e.preventDefault(); $('#search').value = $('#hs').value.trim(); $('#cat').value = ''; drawProducts();
+  $('#hs').blur(); location.hash = '#products'; show();
+}
 
 // ---------- pages ----------
 function show() {
@@ -75,9 +88,13 @@ function show() {
   try { arg = decodeURIComponent(arg); } catch (e) {}
   const el = document.getElementById(h), id = el && el.classList.contains('page') ? h : 'home';
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('on', p.id === id));
+  document.querySelectorAll('#tabs a').forEach(a => a.classList.toggle('on', a.dataset.p === id));
+  document.body.dataset.pg = id;
+  closeMenu(); lbClose();
   if (id === 'view') drawDetail(arg);
   if (id === 'category') drawCategory(arg);
   if (id === 'confirm') drawConfirm(arg);
+  document.body.classList.toggle('has-bar', id === 'view' && !!$('#detail .buybar'));
   scrollTo(0, 0);
 }
 addEventListener('hashchange', show);
@@ -91,36 +108,148 @@ function drawCategory(n) {
   CUR = n; const q = ($('#csearch').value || '').toLowerCase();
   $('#catTitle').textContent = n;
   const c = CATS.find(x => x.name === n);
-  $('#catDesc').innerHTML = (c && safeUrl(c.image) ? `<img src="${esc(safeUrl(c.image))}" alt="" style="max-width:100%;height:120px;object-fit:cover;border-radius:8px"><br>` : '') + esc(c && c.description ? c.description : '');
+  $('#catDesc').innerHTML = (c && imgSrc(c.image) ? `<img src="${esc(imgSrc(c.image))}" alt="" style="width:100%;height:130px;object-fit:cover;border-radius:12px;margin-bottom:8px"><br>` : '') + esc(c && c.description ? c.description : '');
   const l = sorted(PRODUCTS.filter(p => p.category === n && (!q || (p.name || '').toLowerCase().includes(q))), $('#csort').value);
   $('#clistc').innerHTML = l.length ? l.map(pcard).join('') : '<p>No products in this category yet.</p>';
 }
-function gpick(el) {
-  $('#gmain').src = el.src; document.querySelectorAll('.thumbs img').forEach(i => i.classList.toggle('sel', i === el));
-}
+
+// ---------- product detail ----------
 function drawDetail(id) {
   const box = $('#detail');
-  if (!READY) { box.innerHTML = '<p>Loading...</p>'; return; }
+  if (!READY) { box.innerHTML = '<div class="sk" style="aspect-ratio:1"></div>'; return; }
   const p = PRODUCTS.find(x => x.id === id);
   if (!p) { box.innerHTML = '<p>Product not found. <a href="#products">Back to products</a></p>'; return; }
-  const im = images(p), vs = variants(p);
+  CURP = p; GAL = images(p); SELVAR = ''; DQ = 1;
+  const vs = variants(p), d = pct(p), can = p.stock !== false && eff(p);
   const rel = PRODUCTS.filter(x => x.id !== p.id && x.category === p.category).slice(0, 4);
   const pk = PACKAGES.filter(k => (k.items || '').toLowerCase().includes((p.name || '').toLowerCase()));
   box.innerHTML = `<p class="crumb"><a href="#products">Products</a> › ${p.category ? `<a href="#category/${encodeURIComponent(p.category)}">${esc(p.category)}</a> › ` : ''}${esc(p.name)}</p>
-  <div class="two eq"><div class="gal">${im.length ? `<img class="main" id="gmain" src="${esc(im[0])}" alt="">` + (im.length > 1 ? `<div class="thumbs">${im.map((u, k) => `<img src="${esc(u)}" class="${k ? '' : 'sel'}" onclick="gpick(this)" alt="">`).join('')}</div>` : '') : `<div class="ph" style="height:260px;background:${COLORS[(p.name || '').length % 6]}">${esc((p.name || '?')[0])}</div>`}</div>
-  <div class="card"><h2 style="margin-top:0">${esc(p.name)}</h2><p>${status(p)}</p><p>${priceHtml(p)}</p>
-  <p style="white-space:pre-wrap">${esc(p.description || '')}</p>
-  ${p.specs ? `<h4>Specifications</h4><p style="white-space:pre-wrap">${esc(p.specs)}</p>` : ''}${p.sku ? `<p class="tag">SKU: ${esc(p.sku)}</p>` : ''}
-  ${vs.length ? `<label class="tag">Size / variant</label><select id="dvar">${vs.map(v => `<option>${esc(v)}</option>`).join('')}</select>` : ''}
-  ${p.stock !== false && eff(p) ? `<label class="tag">Quantity</label><input id="dqty" type="number" min="1" value="1"><button onclick="addDetail('${esc(p.id)}')">Add to Cart</button> ` : ''}
-  <button style="background:var(--p)" onclick="quote('${esc(p.id)}')">${eff(p) ? 'Request Information' : 'Request a Quote'}</button></div></div>
-  ${pk.length ? `<h3>Included in packages</h3><div class="grid">${pk.map(pkcard).join('')}</div>` : ''}
-  ${rel.length ? `<h3>Related products</h3><div class="grid">${rel.map(pcard).join('')}</div>` : ''}`;
+  <div class="two eq"><div>
+   <div class="gal">${GAL.length ? `<div class="gtrack" id="gtrack" onscroll="gscroll()">${GAL.map((u, k) => `<div class="gs"><img src="${esc(u)}" alt="${esc(p.name)}" onclick="lbOpen(${k})"></div>`).join('')}</div>
+     <span class="gcount" id="gcount">1 / ${GAL.length}</span><span class="ghint">🔍 Tap photo to zoom</span>
+     ${GAL.length > 1 ? '<button class="gar gl" onclick="gstep(-1)">‹</button><button class="gar gr" onclick="gstep(1)">›</button>' : ''}` : `<div class="gs">${ph(p, 'font-size:80px')}</div>`}</div>
+   ${GAL.length > 1 ? `<div class="thumbs" id="gthumbs">${GAL.map((u, k) => `<img src="${esc(u)}" class="${k ? '' : 'sel'}" onclick="gjump(${k})" alt="">`).join('')}</div>` : ''}
+  </div>
+  <div class="info"><h2 style="margin-top:0">${esc(p.name)}</h2>
+   <div class="prow"><span class="big${d ? ' sale' : ''}">${eff(p) ? money(eff(p)) : 'Enquire for price'}</span>${d ? `<s>${money(p.price)}</s><span class="off2">-${d}%</span>` : ''}</div>
+   <p>${status(p)} ${p.sku ? `<span class="tag">SKU: ${esc(p.sku)}</span>` : ''}</p>
+   ${vs.length ? `<h4 style="margin-top:14px">Size / option</h4><div class="chips" id="vchips">${vs.map((v, k) => `<button type="button" class="chip" onclick="pickVar(${k})">${esc(v)}</button>`).join('')}</div>` : ''}
+   ${can ? `<h4 style="margin-top:14px">Quantity</h4><div class="qs"><button type="button" onclick="dq(-1)">−</button><span id="dqty">1</span><button type="button" onclick="dq(1)">+</button></div>` : ''}
+   ${p.description ? `<h4 style="margin-top:16px">Description</h4><p style="white-space:pre-wrap">${esc(p.description)}</p>` : ''}
+   ${p.specs ? `<h4 style="margin-top:14px">Specifications</h4><p style="white-space:pre-wrap">${esc(p.specs)}</p>` : ''}
+  </div></div>
+  ${pk.length ? `<div class="sh"><h3>Included in packages</h3></div><div class="dg">${pk.map(pkcard).join('')}</div>` : ''}
+  ${rel.length ? `<div class="sh"><h3>Related products</h3></div><div class="pg">${rel.map(pcard).join('')}</div>` : ''}
+  <div class="buybar"><div><div class="bp"><b>${eff(p) ? money(eff(p)) : 'Enquire'}</b><span class="tag">${p.stock === false ? 'Out of stock' : 'Cash on delivery'}</span></div>
+   ${can ? `<button onclick="addDetail('${esc(p.id)}')">🛒 Add to cart</button>` : p.stock === false ? '<button disabled>Out of stock</button>' : ''}
+   <button class="dk" onclick="quote('${esc(p.id)}')">${eff(p) ? 'Enquire' : 'Get a quote'}</button></div></div>`;
 }
+function pickVar(k) { SELVAR = variants(CURP)[k]; document.querySelectorAll('#vchips .chip').forEach((c, i) => c.classList.toggle('on', i === k)); }
+function dq(d) { DQ = Math.max(1, Math.min(99, DQ + d)); $('#dqty').textContent = DQ; }
 function addDetail(id) {
-  const v = $('#dvar') ? $('#dvar').value : undefined;
-  addCart(id, v, $('#dqty') ? $('#dqty').value : 1);
+  const p = PRODUCTS.find(x => x.id === id); if (!p) return;
+  if (variants(p).length && !SELVAR) return toast('Please choose a size / option');
+  addCart(id, SELVAR || undefined, DQ);
 }
+function gscroll() {
+  const t = $('#gtrack'); if (!t || !t.clientWidth) return;
+  const i = Math.round(t.scrollLeft / t.clientWidth);
+  $('#gcount').textContent = (i + 1) + ' / ' + GAL.length;
+  document.querySelectorAll('#gthumbs img').forEach((x, k) => x.classList.toggle('sel', k === i));
+}
+function gjump(k) { const t = $('#gtrack'); t.scrollTo({ left: k * t.clientWidth, behavior: 'smooth' }); }
+function gstep(d) { const t = $('#gtrack'); gjump(Math.min(GAL.length - 1, Math.max(0, Math.round(t.scrollLeft / t.clientWidth) + d))); }
+
+// ---------- photo viewer (swipe, pinch zoom, double-tap zoom) ----------
+const LB = { i: 0, s: 1, x: 0, y: 0 }; let lbPtr = new Map(), lbStart = null, lbPinch = null, lbTap = 0;
+const lbClamp = (v, a, b) => Math.min(b, Math.max(a, v));
+function lbApply() { $('#lbi').style.transform = `translate(${LB.x}px,${LB.y}px) scale(${LB.s})`; $('#lbs').style.cursor = LB.s > 1 ? 'grab' : 'zoom-in'; }
+function lbPan() { const m = $('#lbi'), mx = (LB.s - 1) * m.clientWidth / 2, my = (LB.s - 1) * m.clientHeight / 2; LB.x = lbClamp(LB.x, -mx, mx); LB.y = lbClamp(LB.y, -my, my); }
+function lbReset() { LB.s = 1; LB.x = 0; LB.y = 0; lbApply(); }
+function lbShow() { $('#lbi').src = GAL[LB.i] || ''; $('#lbc').textContent = (LB.i + 1) + ' / ' + GAL.length; $('#lb').classList.toggle('one', GAL.length < 2); lbReset(); }
+function lbOpen(k) { if (!GAL.length) return; LB.i = k; lbShow(); $('#lb').classList.add('on'); document.body.classList.add('nolock'); }
+function lbClose() { const l = $('#lb'); if (!l || !l.classList.contains('on')) return; l.classList.remove('on'); document.body.classList.remove('nolock'); $('#lbi').removeAttribute('src'); }
+function lbGo(d) { if (GAL.length < 2) return; LB.i = (LB.i + d + GAL.length) % GAL.length; lbShow(); }
+function lbZoomAt(px, py) {
+  if (LB.s > 1) return lbReset();
+  const r = $('#lbs').getBoundingClientRect(); LB.s = 2.5;
+  LB.x = (px - (r.left + r.width / 2)) * (1 - LB.s); LB.y = (py - (r.top + r.height / 2)) * (1 - LB.s);
+  lbPan(); lbApply();
+}
+(function () {
+  const st = $('#lbs'), dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  st.addEventListener('pointerdown', e => {
+    try { st.setPointerCapture(e.pointerId); } catch (x) {}
+    lbPtr.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (lbPtr.size === 2) { const [a, b] = [...lbPtr.values()]; lbPinch = { d: dist(a, b) || 1, s: LB.s }; lbStart = null; }
+    else if (lbPtr.size === 1) lbStart = { x: e.clientX, y: e.clientY, ox: LB.x, oy: LB.y, moved: false };
+  });
+  st.addEventListener('pointermove', e => {
+    if (!lbPtr.has(e.pointerId)) return;
+    lbPtr.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (lbPtr.size === 2 && lbPinch) { const [a, b] = [...lbPtr.values()]; LB.s = lbClamp(lbPinch.s * dist(a, b) / lbPinch.d, 1, 5); lbPan(); lbApply(); }
+    else if (lbPtr.size === 1 && lbStart) {
+      const dx = e.clientX - lbStart.x, dy = e.clientY - lbStart.y;
+      if (Math.abs(dx) + Math.abs(dy) > 6) lbStart.moved = true;
+      if (LB.s > 1) { LB.x = lbStart.ox + dx; LB.y = lbStart.oy + dy; lbPan(); lbApply(); }
+    }
+  });
+  const up = e => {
+    if (!lbPtr.has(e.pointerId)) return; lbPtr.delete(e.pointerId);
+    if (lbPinch) { if (lbPtr.size < 2) { lbPinch = null; lbStart = null; if (LB.s < 1.08) lbReset(); } return; }
+    if (lbStart && lbPtr.size === 0) {
+      const dx = e.clientX - lbStart.x, dy = e.clientY - lbStart.y;
+      if (e.type === 'pointerup') {
+        if (LB.s === 1 && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.3) lbGo(dx < 0 ? 1 : -1);
+        else if (LB.s === 1 && dy > 90 && dy > Math.abs(dx) * 1.3) lbClose();
+        else if (!lbStart.moved) { const n = Date.now(); if (n - lbTap < 320) { lbTap = 0; lbZoomAt(e.clientX, e.clientY); } else lbTap = n; }
+      }
+      lbStart = null;
+    }
+  };
+  st.addEventListener('pointerup', up); st.addEventListener('pointercancel', up);
+  st.addEventListener('wheel', e => { e.preventDefault(); LB.s = lbClamp(LB.s * (e.deltaY < 0 ? 1.15 : 1 / 1.15), 1, 5); if (LB.s === 1) { LB.x = 0; LB.y = 0; } lbPan(); lbApply(); }, { passive: false });
+  addEventListener('keydown', e => {
+    if (!$('#lb').classList.contains('on')) return;
+    if (e.key === 'Escape') lbClose(); if (e.key === 'ArrowRight') lbGo(1); if (e.key === 'ArrowLeft') lbGo(-1);
+  });
+})();
+
+// ---------- promo slider ----------
+let HI = 0, HN = 1, HT = null, HP = false, HS = false;
+function heroGo(i) {
+  HN = document.querySelectorAll('#htrack .slide').length || 1; HI = ((i % HN) + HN) % HN;
+  $('#htrack').style.transform = 'translateX(-' + HI * 100 + '%)';
+  document.querySelectorAll('#dots i').forEach((d, k) => d.classList.toggle('on', k === HI));
+}
+function heroStart() {
+  clearInterval(HT);
+  if (document.querySelectorAll('#htrack .slide').length > 1) HT = setInterval(() => { if (!HP && !document.hidden) heroGo(HI + 1); }, 4000);
+}
+function buildSlides() {
+  const S = [];
+  BANNERS.filter(b => b.active !== false).sort((a, b) => (+a.order || 0) - (+b.order || 0)).forEach((b, i) => S.push({ img: imgSrc(b.image), title: b.title || '', sub: b.subtitle || '', link: okLink(b.link), btn: b.btn, theme: i }));
+  if (!S.length) {
+    S.push({ img: imgSrc(SITE.banner), title: SITE.heroTitle || 'Welcome to ARK Form Center', sub: SITE.heroText || 'Browse products, packages and offers, or send us an enquiry.', link: '#products', btn: 'Shop now', theme: 0 });
+    OFFERS.slice(0, 3).forEach((o, i) => S.push({ img: imgSrc(o.image), title: o.title, sub: (o.details || '') + (o.code ? ' · Code: ' + o.code : ''), link: '#offers', btn: 'View offer', theme: i + 1 }));
+    PACKAGES.slice(0, 2).forEach((k, i) => S.push({ title: k.name, sub: 'Now ' + money(k.price) + (+k.normal > +k.price ? ' (save ' + money(k.normal - k.price) + ')' : ''), link: '#packages', btn: 'See package', theme: i + 3 }));
+  }
+  return S;
+}
+function heroBuild(S) {
+  $('#htrack').innerHTML = S.map(s => `<div class="slide ${s.img ? '' : 'th' + (s.theme % 5)}">${s.img ? `<img class="sbg" src="${esc(s.img)}" alt="">` : ''}<div class="stxt">${s.title ? `<h2>${esc(s.title)}</h2>` : ''}${s.sub ? `<p>${esc(s.sub)}</p>` : ''}${s.link ? `<a class="btn" href="${esc(s.link)}">${esc(s.btn || 'Shop now')}</a>` : ''}</div></div>`).join('');
+  $('#dots').innerHTML = S.length > 1 ? S.map((_, k) => `<i onclick="heroGo(${k});heroStart()"></i>`).join('') : '';
+  $('#hero').classList.toggle('single', S.length < 2);
+  HI = 0; heroGo(0); heroStart();
+}
+(function () {
+  const h = $('#hero'); let x0 = null;
+  h.addEventListener('pointerdown', e => { x0 = e.clientX; HP = true; HS = false; });
+  h.addEventListener('pointerup', e => { if (x0 !== null) { const dx = e.clientX - x0; if (Math.abs(dx) > 40) { HS = true; heroGo(HI + (dx < 0 ? 1 : -1)); } } x0 = null; HP = false; heroStart(); });
+  h.addEventListener('pointercancel', () => { x0 = null; HP = false; });
+  h.addEventListener('click', e => { if (HS) { e.preventDefault(); e.stopPropagation(); HS = false; } }, true);
+})();
+
 function prefill(type, msg) {
   const f = $('#enqForm'); f.elements.type.value = type; f.elements.message.value = msg; location.hash = '#contact';
 }
@@ -128,7 +257,15 @@ function quote(id) { const p = PRODUCTS.find(x => x.id === id); if (p) prefill(e
 function enquirePkg(id) { const k = PACKAGES.find(x => x.id === id); if (k) prefill('Package / Bulk Order', 'I am interested in the package: ' + k.name); }
 
 // ---------- cart ----------
+function bump() { const f = $('#fcart'); f.classList.remove('bump'); void f.offsetWidth; f.classList.add('bump'); }
 function saveCart() { try { localStorage.setItem('cart', JSON.stringify(cart)); } catch (e) {} drawCart(); }
+function quickAdd(id) {
+  const p = PRODUCTS.find(x => x.id === id); if (!p) return;
+  if (p.stock === false) return toast('Out of stock');
+  if (!eff(p)) return quote(id);
+  if (variants(p).length) { location.hash = '#view/' + id; return toast('Choose a size / option'); }
+  addCart(id);
+}
 function addCart(id, variant, qty) {
   const p = PRODUCTS.find(x => x.id === id); if (!p) return;
   if (p.stock === false) return toast('Out of stock');
@@ -136,7 +273,7 @@ function addCart(id, variant, qty) {
   qty = Math.max(1, parseInt(qty) || 1);
   const i = cart.find(x => x.id === id && (x.variant || '') === (variant || ''));
   i ? i.qty += qty : cart.push({ id, name: p.name, category: p.category || '', price: eff(p), qty, variant: variant || '' });
-  saveCart(); toast('Added to cart');
+  saveCart(); bump(); toast('Added to cart');
 }
 function setQty(k, v) { cart[k].qty = Math.max(1, parseInt(v) || 1); saveCart(); }
 function rmItem(k) { cart.splice(k, 1); saveCart(); }
@@ -160,15 +297,18 @@ function fees() {
   return { net, delivery, tax, total: net + delivery + tax };
 }
 function drawCart() {
-  const t = sub(), d = disc(), fe = fees();
-  $('#cartn').textContent = cart.reduce((s, i) => s + i.qty, 0);
-  const low = coupon && t < (+coupon.min || 0) ? ' - minimum spend ' + money(coupon.min) : '';
-  const extra = (+SET.deliveryFee ? `<tr><td colspan=4>Delivery: ${fe.delivery ? money(fe.delivery) : 'Free'}</td></tr>` : '') + (+SET.tax ? `<tr><td colspan=4>Tax (${+SET.tax}%): ${money(fe.tax)}</td></tr>` : '');
-  $('#clist').innerHTML = cart.length ? '<tr><th>Item</th><th>Price</th><th>Qty</th><th></th></tr>' + cart.map((i, k) => `<tr><td>${esc(i.name)}${i.variant ? `<br><span class="tag">${esc(i.variant)}</span>` : ''}</td><td>${money(i.price)}</td>
-   <td><input type="number" min="1" value="${i.qty}" style="width:64px;margin:0" onchange="setQty(${k},this.value)"></td><td><button onclick="rmItem(${k})">x</button></td></tr>`).join('') +
-    `<tr><td colspan=4>Subtotal: ${money(t)}</td></tr><tr><td colspan=4>Discount${coupon ? ' (' + esc(coupon.code) + ')' : ''}: ${money(d)}${esc(low)}</td></tr>${extra}<tr><th colspan=4>Total: ${money(fe.total)}</th></tr>` : '<tr><td>Your cart is empty</td></tr>';
+  const t = sub(), d = disc(), fe = fees(), n = cart.reduce((s, i) => s + i.qty, 0);
+  ['#cartn', '#cartn2'].forEach(s => { $(s).textContent = n; $(s).style.display = n ? '' : 'none'; });
+  $('#clist').innerHTML = cart.length ? cart.map((i, k) => {
+    const p = PRODUCTS.find(x => x.id === i.id), im = p && images(p)[0];
+    return `<div class="crow"><div class="cth">${im ? `<img src="${esc(im)}" alt="">` : ph({ name: i.name })}</div>
+    <div class="ci"><b>${esc(i.name)}</b>${i.variant ? `<span class="tag">${esc(i.variant)}</span>` : ''}<span class="price">${money(i.price)}</span></div>
+    <div class="qs sm2"><button onclick="setQty(${k},${i.qty - 1})">−</button><span>${i.qty}</span><button onclick="setQty(${k},${i.qty + 1})">+</button></div>
+    <button class="rm" onclick="rmItem(${k})" aria-label="Remove">✕</button></div>`;
+  }).join('') : '<div class="card" style="text-align:center">Your cart is empty<br><br><a class="btn" href="#products">Start shopping</a></div>';
+  const low = coupon && t < (+coupon.min || 0) ? `<p class="tag">Coupon needs a minimum spend of ${money(coupon.min)}</p>` : '';
   $('#sum').innerHTML = cart.length ? `<h4>Order summary</h4>${cart.map(i => `<p><span>${esc(i.name)}${i.variant ? ' (' + esc(i.variant) + ')' : ''} × ${i.qty}</span><span>${money(i.price * i.qty)}</span></p>`).join('')}<hr>
-   <p><span>Subtotal</span><span>${money(t)}</span></p><p><span>Discount</span><span>- ${money(d)}</span></p>
+   <p><span>Subtotal</span><span>${money(t)}</span></p><p><span>Discount${coupon ? ' (' + esc(coupon.code) + ')' : ''}</span><span>- ${money(d)}</span></p>${low}
    ${+SET.deliveryFee ? `<p><span>Delivery</span><span>${fe.delivery ? money(fe.delivery) : 'Free'}</span></p>` : ''}${+SET.tax ? `<p><span>Tax (${+SET.tax}%)</span><span>${money(fe.tax)}</span></p>` : ''}
    <p><b>Total</b><b>${money(fe.total)}</b></p>` : '';
 }
@@ -217,7 +357,7 @@ function drawConfirm(no) {
   ${+o.delivery ? `<p><span>Delivery</span><span>${money(o.delivery)}</span></p>` : ''}${+o.tax ? `<p><span>Tax</span><span>${money(o.tax)}</span></p>` : ''}
   <p><b>Total</b><b>${money(o.total)}</b></p>
   <p><span>Payment</span><span>${esc(o.payment)}</span></p><p><span>Deliver to</span><span>${esc(o.address)}</span></p></div>
-  <p><a class="btn" href="account.html">Track in My Account</a> <a class="btn" href="#products" style="background:var(--p)">Continue shopping</a></p>`;
+  <p><a class="btn" href="account.html">Track in My Account</a> <a class="btn dk" href="#products">Continue shopping</a></p>`;
 }
 async function sendEnquiry(e) {
   e.preventDefault(); const f = e.target, v = k => f.elements[k].value.trim();
@@ -245,24 +385,27 @@ firebase.auth().onAuthStateChanged(async u => {
 (async () => {
   try { SET = (await db.collection('settings').doc('store').get()).data() || {}; } catch (e) {}
   if (SET.currency) SYM = SET.currency;
-  const hb = document.querySelector('header b');
-  if (SET.businessName) { hb.textContent = SET.businessName; document.title = SET.businessName; }
-  if (safeUrl(SET.logo)) hb.insertAdjacentHTML('afterbegin', `<img src="${esc(safeUrl(SET.logo))}" alt="" style="height:26px;vertical-align:middle;margin-right:8px;border-radius:4px">`);
-  CATS = await load('categories');
+  const br = $('#brand');
+  if (SET.businessName) { br.textContent = SET.businessName; document.title = SET.businessName; }
+  if (imgSrc(SET.logo)) br.insertAdjacentHTML('afterbegin', `<img class="logo" src="${esc(imgSrc(SET.logo))}" alt="">`);
+  const [cats, prods, pks, ofs, bns] = await Promise.all([load('categories'), load('products'), load('packages'), load('offers'), load('banners')]);
+  CATS = cats; BANNERS = bns; SITE = await SITEP;
   const off = new Set(CATS.filter(c => c.active === false).map(c => c.name));
-  PRODUCTS = (await load('products')).filter(p => p.published !== false && !off.has(p.category));
-  PACKAGES = (await load('packages')).filter(liveP);
-  OFFERS = (await load('offers')).filter(liveO);
+  PRODUCTS = prods.filter(p => p.published !== false && !off.has(p.category));
+  PACKAGES = pks.filter(liveP); OFFERS = ofs.filter(liveO);
   READY = true;
   const enabled = CATS.filter(c => c.active !== false).sort((a, b) => (+a.order || 0) - (+b.order || 0)).map(c => c.name);
-  const cats = [...new Set([...enabled, ...PRODUCTS.map(p => p.category).filter(Boolean)])];
-  $('#cat').innerHTML = '<option value="">All categories</option>' + cats.map(c => `<option>${esc(c)}</option>`).join('');
-  $('#homeCats').innerHTML = cats.map(c => `<a class="chip" href="#category/${encodeURIComponent(c)}">${esc(c)}</a>`).join('') || '<p>No categories yet.</p>';
+  const names = [...new Set([...enabled, ...PRODUCTS.map(p => p.category).filter(Boolean)])];
+  const thumb = n => { const c = CATS.find(x => x.name === n), i = imgSrc(c && c.image) || images(PRODUCTS.find(p => p.category === n) || {})[0]; return i ? `<img src="${esc(i)}" alt="">` : esc((n[0] || '?').toUpperCase()); };
+  $('#cat').innerHTML = '<option value="">All categories</option>' + names.map(c => `<option>${esc(c)}</option>`).join('');
+  $('#homeCats').innerHTML = `<a class="ct" href="#products"><div class="cc" style="background:var(--p)">All</div>All</a>` + names.map((c, k) => `<a class="ct" href="#category/${encodeURIComponent(c)}"><div class="cc" style="background:${COLORS[k % 6]}">${thumb(c)}</div>${esc(c)}</a>`).join('');
+  $('#drCats').innerHTML = names.map(c => `<a href="#category/${encodeURIComponent(c)}">${esc(c)}</a>`).join('') || '<a href="#products">All products</a>';
   const fe = PRODUCTS.filter(p => p.featured);
-  $('#feat').innerHTML = (fe.length ? fe.slice(0, 8) : PRODUCTS.slice(0, 4)).map(pcard).join('') || '<p>No products yet.</p>';
+  $('#feat').innerHTML = (fe.length ? fe.slice(0, 8) : PRODUCTS.slice(0, 8)).map(pcard).join('') || '<p>No products yet.</p>';
   $('#homeDeals').innerHTML = PACKAGES.slice(0, 2).map(pkcard).join('') + OFFERS.slice(0, 2).map(ocard).join('') || '<p>No packages or offers right now.</p>';
   drawProducts();
   $('#pk').innerHTML = PACKAGES.map(pkcard).join('') || '<p>No packages available right now.</p>';
   $('#of').innerHTML = OFFERS.map(ocard).join('') || '<p>No active offers right now.</p>';
+  heroBuild(buildSlides());
   drawCart(); show();
 })();
