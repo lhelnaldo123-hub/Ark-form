@@ -1,0 +1,52 @@
+/* ARK Form Center - extra styles (Part 1). Load AFTER css/style.css */
+
+/* ---- visible Logout buttons ---- */
+.btn-out{background:#fff!important;color:#b00020!important;border:2px solid #b00020!important;box-shadow:none!important;font-weight:700}
+.btn-out:hover{background:#b00020!important;color:#fff!important}
+header .hout{background:#fff;color:#b00020;border:0;padding:7px 16px;border-radius:20px;font-size:14px;font-weight:700;box-shadow:none;cursor:pointer}
+header .hout:hover{background:#ffe3e6;transform:none}
+header .hbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* ---- login-required notice ---- */
+.gate{background:#fff7e0;border:1.5px solid var(--gold);color:#6b4a00;border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:14px;font-weight:600}
+.gate.sm{margin:8px 0}
+
+/* ---- profile hero ---- */
+.acct-hero{display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:linear-gradient(135deg,var(--ink),var(--p2));color:#fff;border-radius:22px;padding:18px;border-bottom:4px solid var(--gold);box-shadow:var(--sh2);margin-bottom:14px}
+.av{width:60px;height:60px;border-radius:50%;background:var(--gg);color:#1a1405;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;flex:0 0 auto;font-family:"Playfair Display",serif}
+.acct-hero .who{flex:1;min-width:160px}
+.acct-hero .who b{display:block;font-size:19px;color:var(--gold2);font-family:"Playfair Display",serif}
+.acct-hero .who span{font-size:13px;opacity:.85;word-break:break-all}
+
+/* ---- tabs ---- */
+.atabs{display:flex;gap:6px;margin:0 0 14px;overflow-x:auto;scrollbar-width:none}
+.atabs::-webkit-scrollbar{display:none}
+.atabs button{background:#fff;color:var(--p);border:1px solid var(--line);box-shadow:none;padding:10px 18px;border-radius:22px;white-space:nowrap}
+.atabs button.on{background:linear-gradient(135deg,var(--p2),var(--ink));color:#fff;border-color:var(--p)}
+
+/* ---- order cards + tracking ---- */
+.oc{background:#fff;border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:var(--sh);border:1px solid #f1ebdb}
+.oc .oh{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start}
+.oc .oh b{font-size:16px;color:var(--p)}
+.pill{display:inline-block;padding:4px 12px;border-radius:14px;font-size:12px;font-weight:700;background:#e8ebf0;color:#334}
+.pill.act{background:#e3efff;color:#0b4a99}.pill.ok{background:#dff5e6;color:#1b7f3b}.pill.bad{background:#fdecea;color:#b00020}
+.trk{display:flex;margin:18px 0 8px}
+.trk .s{flex:1;text-align:center;position:relative;font-size:11px;color:#8a909c;line-height:1.2}
+.trk .s i{display:flex;width:26px;height:26px;margin:0 auto 6px;border-radius:50%;background:#e1e5ec;color:#fff;align-items:center;justify-content:center;font-style:normal;font-size:13px;position:relative;z-index:1}
+.trk .s::before{content:"";position:absolute;top:12px;left:-50%;width:100%;height:3px;background:#e1e5ec}
+.trk .s:first-child::before{display:none}
+.trk .s.done i{background:#1b7f3b}.trk .s.done::before{background:#1b7f3b}
+.trk .s.now i{background:var(--gold);box-shadow:0 0 0 5px rgba(216,178,90,.3)}.trk .s.now::before{background:#1b7f3b}
+.trk .s.done,.trk .s.now{color:var(--p);font-weight:700}
+.trk .s small{display:block;font-weight:400;color:var(--mute);font-size:10px;margin-top:2px}
+.oc .it{font-size:14px;margin:6px 0;color:var(--t)}
+.oc .more{display:none;border-top:1px dashed var(--line);margin-top:10px;padding-top:10px;font-size:14px}
+.oc .more.on{display:block}
+.oc .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.cancelbar{background:#fdecea;color:#b00020;border-radius:12px;padding:10px 12px;font-size:14px;margin-top:10px}
+
+/* ---- drawer auth row ---- */
+.dr .dauth{padding:14px 20px;border-bottom:1px solid #f3eee0;background:#faf6ea}
+.dr .dauth b{display:block;color:var(--p);margin-bottom:8px}
+.dr .dauth .btn,.dr .dauth button{padding:9px 16px;font-size:13px;margin-right:6px}
+@media(max-width:520px){.trk .s{font-size:10px}.trk .s i{width:22px;height:22px}.trk .s::before{top:10px}}
