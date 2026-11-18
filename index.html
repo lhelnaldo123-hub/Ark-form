@@ -1,65 +1,100 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#13294b">
 <title>ARK Form Center</title><link rel="stylesheet" href="css/style.css"></head><body>
-<header><b>ARK Form Center</b>
-<nav><a href="#home">Home</a><a href="#about">About</a><a href="#products">Products</a><a href="#packages">Packages</a><a href="#offers">Offers</a><a href="#faq">FAQs</a><a href="#contact">Contact</a><a href="account.html">My Account</a></nav>
-<a class="cartbtn" href="#cart">🛒 Cart (<span id="cartn">0</span>)</a></header>
-<main>
 
+<div class="strip" id="strip" style="display:none"></div>
+<div class="top">
+ <button class="ib" onclick="openMenu()" aria-label="Menu">☰</button>
+ <a class="brand" href="#home" id="brand">ARK Form Center</a>
+ <form class="sbox" onsubmit="goSearch(event)"><input id="hs" type="search" placeholder="Search products..." autocomplete="off"><button>Search</button></form>
+ <span class="sp"></span>
+ <a class="ib" href="account.html" aria-label="My account">👤</a>
+ <a class="ib" href="#cart" aria-label="Cart">🛒<b class="bdg" id="cartn" style="display:none">0</b></a>
+</div>
+<nav class="tabs" id="tabs"><a href="#home" data-p="home">Home</a><a href="#products" data-p="products">Products</a><a href="#packages" data-p="packages">Packages</a><a href="#offers" data-p="offers">Offers</a><a href="#contact" data-p="contact">Contact</a></nav>
+
+<div class="ov" id="ov" onclick="closeMenu()"></div>
+<aside class="dr" id="dr">
+ <div class="dh"><b>ARK Form Center</b><button class="ib" style="color:#fff" onclick="closeMenu()" aria-label="Close">✕</button></div>
+ <h5>Menu</h5><a href="#home">Home</a><a href="#about">About Us</a><a href="#products">All Products</a><a href="#packages">Packages / Deals</a><a href="#offers">Offers &amp; Discounts</a><a href="#faq">FAQs</a><a href="#contact">Contact Us</a><a href="account.html">My Account</a><a href="#cart">My Cart</a>
+ <h5>Shop by category</h5><div id="drCats"></div>
+ <h5>Policies</h5><a href="#privacy">Privacy Policy</a><a href="#terms">Terms &amp; Conditions</a><a href="#returns">Return / Exchange</a>
+ <h5>Staff</h5><a href="admin.html">Admin Login</a>
+</aside>
+
+<main>
 <section id="home" class="page on">
-<div class="hero" id="hero"><h1 id="heroTitle">Welcome to ARK Form Center</h1><p id="heroText">Browse products, packages and offers, or send us an enquiry.</p><a class="btn" href="#products">Shop Now</a> <a class="btn" href="#contact" style="background:#fff;color:#1f3a5f">Get a Quote</a></div>
-<h3>Shop by category</h3><div id="homeCats" class="chips"></div>
-<h3>Featured Products</h3><div id="feat" class="grid"></div><p><a href="#products">View all products →</a></p>
-<h3>Packages &amp; Current Offers</h3><div id="homeDeals" class="grid"></div><p><a href="#packages">All packages →</a> · <a href="#offers">All offers →</a></p>
-<h3>Why choose us</h3><div class="grid"><div class="card">Quality products</div><div class="card">Friendly service</div><div class="card">Easy ordering</div></div>
-<h3>Customer Reviews</h3><div id="rev" class="grid"></div><div id="revForm"></div>
-<h3>FAQ preview</h3><div class="card"><div id="faqPrev" style="white-space:pre-wrap">FAQs will appear here once the business adds them.</div><p><a href="#faq">Read all FAQs →</a></p></div>
-<div class="hero" style="margin-top:18px"><h3 style="margin-top:0">Need help or a quote?</h3><p>Send us a message and we will get back to you.</p><a class="btn" href="#contact" style="background:#fff;color:#1f3a5f">Contact us</a></div>
+ <div class="hero single" id="hero">
+  <div class="htrack" id="htrack"><div class="slide th0"><div class="stxt"><h2>Welcome to ARK Form Center</h2><p>Browse products, packages and offers, or send us an enquiry.</p><a class="btn" href="#products">Shop now</a></div></div></div>
+  <button class="hn hp" onclick="heroGo(HI-1);heroStart()" aria-label="Previous">‹</button><button class="hn hnx" onclick="heroGo(HI+1);heroStart()" aria-label="Next">›</button>
+  <div class="dots" id="dots"></div>
+ </div>
+ <div class="trust"><span>✔ Quality products</span><span>✔ Friendly service</span><span>✔ Easy ordering</span><span>✔ Cash on delivery</span></div>
+ <div class="sh"><h3>Shop by category</h3></div><div id="homeCats" class="cats"></div>
+ <div class="sh"><h3>Featured products</h3><a href="#products">View all →</a></div>
+ <div id="feat" class="pg"><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div></div>
+ <div class="sh"><h3>Packages &amp; offers</h3><a href="#offers">All offers →</a></div><div id="homeDeals" class="dg"></div>
+ <div class="sh"><h3>Customer reviews</h3></div><div id="rev" class="dg"></div><div id="revForm" style="margin-top:12px"></div>
+ <div class="sh"><h3>Good to know</h3><a href="#faq">All FAQs →</a></div><div class="dcard"><div id="faqPrev" style="white-space:pre-wrap">FAQs will appear here once the business adds them.</div></div>
+ <div class="cta"><h3>Need help or a quote?</h3><p>Send us a message and we will get back to you.</p><a class="btn" href="#contact">Contact us</a></div>
 </section>
 
-<section id="about" class="page"><h2>About Us</h2><p id="aboutText" style="white-space:pre-wrap">Business introduction placeholder - to be supplied by ARK Form Center.</p><p><a class="btn" href="#products">View products</a> <a class="btn" href="#contact">Contact us</a></p></section>
+<section id="about" class="page"><h2>About Us</h2><div class="card"><p id="aboutText" style="white-space:pre-wrap">Business introduction placeholder - to be supplied by ARK Form Center.</p></div><p><a class="btn" href="#products">View products</a> <a class="btn dk" href="#contact">Contact us</a></p></section>
 
 <section id="products" class="page"><h2>Products</h2>
-<div class="bar"><input id="search" placeholder="Search products..." oninput="drawProducts()"><select id="cat" onchange="drawProducts()"></select>
-<select id="sort" onchange="drawProducts()"><option value="">Sort: Default</option><option value="lo">Price: low to high</option><option value="hi">Price: high to low</option><option value="new">Newest</option></select></div>
-<div id="plist" class="grid"></div></section>
+ <div class="bar"><input id="search" type="search" placeholder="Search products..." oninput="drawProducts()"><select id="cat" onchange="drawProducts()"></select>
+ <select id="sort" onchange="drawProducts()"><option value="">Sort: Default</option><option value="lo">Price: low to high</option><option value="hi">Price: high to low</option><option value="new">Newest</option></select></div>
+ <div id="plist" class="pg"></div></section>
 
-<section id="category" class="page"><p class="crumb"><a href="#products">Products</a> › Category</p><h2 id="catTitle"></h2><p id="catDesc"></p>
-<div class="bar" style="grid-template-columns:2fr 1fr"><input id="csearch" placeholder="Search in this category..." oninput="drawCategory(CUR)"><select id="csort" onchange="drawCategory(CUR)"><option value="">Sort: Default</option><option value="lo">Price: low to high</option><option value="hi">Price: high to low</option><option value="new">Newest</option></select></div>
-<div id="clistc" class="grid"></div></section>
+<section id="category" class="page"><p class="crumb"><a href="#products">Products</a> › Category</p><h2 id="catTitle"></h2><div id="catDesc" style="margin-bottom:10px"></div>
+ <div class="bar"><input id="csearch" type="search" placeholder="Search in this category..." oninput="drawCategory(CUR)"><select id="csort" onchange="drawCategory(CUR)"><option value="">Sort: Default</option><option value="lo">Price: low to high</option><option value="hi">Price: high to low</option><option value="new">Newest</option></select></div>
+ <div id="clistc" class="pg"></div></section>
 
 <section id="view" class="page"><div id="detail"></div></section>
 
-<section id="packages" class="page"><h2>Packages / Deals</h2><div id="pk" class="grid"></div></section>
-<section id="offers" class="page"><h2>Offers &amp; Discounts</h2><div id="of" class="grid"></div></section>
+<section id="packages" class="page"><h2>Packages / Deals</h2><div id="pk" class="dg"></div></section>
+<section id="offers" class="page"><h2>Offers &amp; Discounts</h2><div id="of" class="dg"></div></section>
 
 <section id="faq" class="page"><h2>FAQs</h2><div class="card" id="faqBox"><p>FAQ text placeholder - editable later by the admin.</p></div>
-<p><a href="#privacy">Privacy Policy</a> · <a href="#terms">Terms &amp; Conditions</a> · <a href="#returns">Return / Exchange Policy</a></p></section>
+ <p><a href="#privacy">Privacy Policy</a> · <a href="#terms">Terms &amp; Conditions</a> · <a href="#returns">Return / Exchange Policy</a></p></section>
 <section id="privacy" class="page"><h2>Privacy Policy</h2><div class="card" id="privBox"><p>Privacy Policy placeholder - to be supplied by ARK Form Center.</p></div></section>
 <section id="terms" class="page"><h2>Terms &amp; Conditions</h2><div class="card" id="termsBox"><p>Terms &amp; Conditions placeholder - to be supplied by ARK Form Center.</p></div></section>
 <section id="returns" class="page"><h2>Return / Exchange Policy</h2><div class="card" id="retBox"><p>Return / Exchange Policy placeholder - to be supplied by ARK Form Center.</p></div></section>
 
 <section id="contact" class="page"><h2>Contact Us</h2>
-<div id="contactInfo"><p>Address, phone, email and hours: to be supplied. Hyderabad, Sindh.</p></div>
-<div id="cSocial"></div><div id="mapLink"></div><br>
-<form id="enqForm" onsubmit="sendEnquiry(event)" class="card"><input name="name" placeholder="Full name" required><input name="phone" type="tel" placeholder="Phone" required><input name="email" type="email" placeholder="Email (optional)">
-<select name="type"><option>Product Information</option><option>Package / Bulk Order</option><option>Pricing</option><option>Delivery</option><option>Complaint</option><option>Other</option></select>
-<textarea name="message" rows="4" placeholder="Message" required></textarea><button>Send</button><p class="msg"></p></form></section>
+ <div id="contactInfo" class="card"><p>Address, phone, email and hours: to be supplied. Hyderabad, Sindh.</p></div>
+ <div id="cSocial" style="margin-top:10px"></div><div id="mapLink"></div><br>
+ <form id="enqForm" onsubmit="sendEnquiry(event)" class="card"><h3 style="margin-top:0">Send us an enquiry</h3>
+ <input name="name" placeholder="Full name" required><input name="phone" type="tel" placeholder="Phone" required><input name="email" type="email" placeholder="Email (optional)">
+ <select name="type"><option>Product Information</option><option>Package / Bulk Order</option><option>Pricing</option><option>Delivery</option><option>Complaint</option><option>Other</option></select>
+ <textarea name="message" rows="4" placeholder="Message" required></textarea><button>Send</button><p class="msg"></p></form></section>
 
-<section id="cart" class="page"><h2>Your Cart</h2><div class="two"><div><table id="clist"></table><br>
-<input id="cc" placeholder="Coupon code" style="max-width:220px"> <button onclick="applyCoupon()">Apply</button><p id="cmsg" class="msg"></p></div>
-<form id="coForm" onsubmit="checkout(event)" class="card"><h3>Checkout</h3><div id="sum" class="sum"></div>
-<input name="name" placeholder="Full name" required><input name="phone" type="tel" placeholder="Phone" required><input name="email" type="email" placeholder="Email (optional)"><input name="address" placeholder="Delivery address" required><textarea name="notes" placeholder="Order notes"></textarea>
-<p>Payment: Cash on delivery</p><button>Place Order</button><p class="msg"></p></form></div></section>
+<section id="cart" class="page"><h2>Your Cart</h2>
+ <div class="two"><div><div id="clist"></div>
+  <div class="card"><h4>Have a coupon?</h4><input id="cc" placeholder="Coupon code" style="max-width:260px"> <button onclick="applyCoupon()">Apply</button><p id="cmsg" class="msg"></p></div></div>
+ <form id="coForm" onsubmit="checkout(event)" class="card"><h3 style="margin-top:0">Checkout</h3><div id="sum" class="sum"></div>
+  <input name="name" placeholder="Full name" required><input name="phone" type="tel" placeholder="Phone" required><input name="email" type="email" placeholder="Email (optional)"><input name="address" placeholder="Delivery address" required><textarea name="notes" placeholder="Order notes"></textarea>
+  <p>Payment: Cash on delivery</p><button>Place Order</button><p class="msg"></p></form></div></section>
 
 <section id="confirm" class="page"><div id="confBox"></div></section>
 </main>
 
+<a href="#cart" class="fcart" id="fcart" aria-label="Open cart">🛒<b class="bdg" id="cartn2" style="display:none">0</b></a>
+
+<div class="lb" id="lb">
+ <div class="lbt"><span id="lbc"></span><button onclick="lbClose()" aria-label="Close">✕</button></div>
+ <div class="lbs" id="lbs"><img id="lbi" alt="" draggable="false"></div>
+ <button class="lba lbp" onclick="lbGo(-1)" aria-label="Previous">‹</button><button class="lba lbnx" onclick="lbGo(1)" aria-label="Next">›</button>
+ <div class="lbh">Pinch or double-tap to zoom · swipe for the next photo</div>
+</div>
+
 <footer><div class="fgrid">
 <div><h4>ARK Form Center</h4><p>Hyderabad, Sindh, Pakistan</p><div id="fContact"><p>Contact details to be supplied.</p></div><div id="fSocial"></div></div>
 <div><h4>Quick links</h4><a href="#home">Home</a><a href="#products">Products</a><a href="#packages">Packages</a><a href="#offers">Offers</a></div>
-<div><h4>Support</h4><a href="#contact">Contact Us</a><a href="#faq">FAQs</a><a href="#privacy">Privacy Policy</a><a href="#terms">Terms &amp; Conditions</a><a href="#returns">Return / Exchange</a><a href="account.html">My Account</a><a href="#cart">Cart</a></div>
+<div><h4>Support</h4><a href="#contact">Contact Us</a><a href="#faq">FAQs</a><a href="#privacy">Privacy Policy</a><a href="#terms">Terms &amp; Conditions</a><a href="#returns">Return / Exchange</a><a href="account.html">My Account</a></div>
 <div><h4>Staff</h4><a href="admin.html">Admin Login</a></div></div>
 <p class="copy">© ARK Form Center. All rights reserved.</p></footer>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
