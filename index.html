@@ -11,6 +11,7 @@
  <form class="sbox" onsubmit="goSearch(event)"><input id="hs" type="search" placeholder="Search products..." autocomplete="off"><button>Search</button></form>
  <span class="sp"></span>
  <a class="ib" href="account.html" aria-label="My account">👤</a>
+ <a class="ib" href="account.html#inbox" aria-label="Notifications">🔔<b class="bdg" id="inboxn" style="display:none">0</b></a>
  <a class="ib" href="#cart" aria-label="Cart">🛒<b class="bdg" id="cartn" style="display:none">0</b></a>
 </div>
 <nav class="tabs" id="tabs"><a href="#home" data-p="home">Home</a><a href="#products" data-p="products">Products</a><a href="#packages" data-p="packages">Packages</a><a href="#offers" data-p="offers">Offers</a><a href="#contact" data-p="contact">Contact</a></nav>
@@ -85,7 +86,8 @@
   <div class="card"><h4>Have a coupon?</h4><input id="cc" placeholder="Coupon code" style="max-width:260px"> <button onclick="applyCoupon()">Apply</button><p id="cmsg" class="msg"></p></div></div>
  <form id="coForm" onsubmit="checkout(event)" class="card"><h3 style="margin-top:0">Checkout</h3><div id="sum" class="sum"></div>
   <input name="name" placeholder="Full name" required><input name="phone" type="tel" placeholder="Phone" required><input name="email" type="email" placeholder="Email (optional)"><input name="address" placeholder="Delivery address" required><textarea name="notes" placeholder="Order notes"></textarea>
-  <p>Payment: Cash on delivery</p><p class="gate sm" id="loginNote">🔒 You need to log in to place your order. Your cart will be saved and waiting for you.</p><button>Place Order</button><p class="msg"></p></form></div></section>
+  <h4 style="margin:6px 0 0">How do you want your order?</h4><div class="mth"><label class="mopt"><input type="radio" name="method" value="Delivery" checked><span>🚚 Delivery</span></label><label class="mopt"><input type="radio" name="method" value="Pickup"><span>🏬 Pickup</span></label></div><p class="picknote" id="pickNote" style="display:none"></p>
+  <p>Payment: Cash on delivery (or pay when you collect)</p><p class="gate sm" id="loginNote">🔒 You need to log in to place your order. Your cart will be saved and waiting for you.</p><button>Place Order</button><p class="msg"></p></form></div></section>
 
 <section id="confirm" class="page"><div id="confBox"></div></section>
 </main>
