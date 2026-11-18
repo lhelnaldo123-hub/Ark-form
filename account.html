@@ -1,58 +1,40 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>My Account - ARK Form Center</title><link rel="stylesheet" href="css/style.css"></head><body>
-<header><b>ARK Form Center</b><a style="color:#fff" href="index.html">Back to shop</a></header><main>
+<title>My Account - ARK Form Center</title><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/extra.css"></head><body>
+<header><b>ARK Form Center</b><div class="hbar"><a href="index.html">Back to shop</a><button class="hout" id="hOut" style="display:none" onclick="doLogout()">Log out</button></div></header>
+<main>
+
+<!-- LOGGED OUT -->
 <div id="out">
-<div class="card"><h3>Login</h3><input id="le" type="email" placeholder="Email"><input id="lp" type="password" placeholder="Password">
-<button onclick="login()">Login</button> <a href="#" onclick="reset();return false">Forgot password?</a><p id="lmsg" class="msg"></p></div><br>
-<div class="card"><h3>Register</h3><input id="rn" placeholder="Full name"><input id="rph" type="tel" placeholder="Phone"><input id="re" type="email" placeholder="Email"><input id="rp" type="password" placeholder="Password (min 6)">
-<button onclick="register()">Create account</button><p id="rmsg" class="msg"></p></div></div>
+ <div class="gate" id="gate" style="display:none">🔒 Please log in or create an account to place your order. Your cart is saved and will be waiting for you.</div>
+ <div class="card"><h3 style="margin-top:0">Login</h3><input id="le" type="email" placeholder="Email"><input id="lp" type="password" placeholder="Password">
+ <button onclick="login()">Login</button> <a href="#" onclick="reset();return false">Forgot password?</a><p id="lmsg" class="msg"></p></div><br>
+ <div class="card"><h3 style="margin-top:0">Register</h3><input id="rn" placeholder="Full name"><input id="rph" type="tel" placeholder="Phone"><input id="re" type="email" placeholder="Email"><input id="rp" type="password" placeholder="Password (min 6)">
+ <button onclick="register()">Create account</button><p id="rmsg" class="msg"></p></div>
+</div>
+
+<!-- LOGGED IN -->
 <div id="in" style="display:none">
-<div class="card"><h3>My Account</h3><input id="pn" placeholder="Name"><input id="pph" type="tel" placeholder="Phone"><input id="pa" placeholder="Default delivery address">
-<button onclick="saveP()">Save profile</button> <button onclick="auth.signOut()" style="background:var(--p)">Logout</button><p id="pmsg" class="msg"></p></div><br>
-<div class="card"><h3>Address book</h3><table id="alist"></table><br><input id="al" placeholder="Label (Home, Office...)"><input id="at" placeholder="Full address">
-<button onclick="addAddr()">Add address</button><p id="amsg" class="msg"></p></div>
-<h3>My Orders</h3><table id="ords"></table></div></main>
+ <div class="acct-hero"><div class="av" id="av">A</div><div class="who"><b id="hn"></b><span id="he"></span></div><button class="btn-out" onclick="doLogout()">Log out</button></div>
+ <div class="atabs" id="atabs"><button data-t="profile" onclick="showTab('profile')">👤 Profile</button><button data-t="orders" onclick="showTab('orders')">📦 My Orders</button><button data-t="addresses" onclick="showTab('addresses')">📍 Addresses</button></div>
+
+ <div id="t-profile">
+  <div class="card"><h3 style="margin-top:0">My Profile</h3><input id="pn" placeholder="Name"><input id="pph" type="tel" placeholder="Phone"><input id="pa" placeholder="Default delivery address">
+  <button onclick="saveP()">Save profile</button><p id="pmsg" class="msg"></p></div>
+ </div>
+
+ <div id="t-orders">
+  <h3 style="margin-top:0">My Orders &amp; Tracking</h3>
+  <div id="ords"><p>Loading your orders...</p></div>
+ </div>
+
+ <div id="t-addresses">
+  <div class="card"><h3 style="margin-top:0">Address book</h3><table id="alist"></table><br><input id="al" placeholder="Label (Home, Office...)"><input id="at" placeholder="Full address">
+  <button onclick="addAddr()">Add address</button><p id="amsg" class="msg"></p></div>
+ </div>
+</div>
+</main>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js"></script><script>
-firebase.initializeApp(FIREBASE_CONFIG);const db=firebase.firestore(),auth=firebase.auth(),$=s=>document.querySelector(s);
-const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const validPhone=v=>/^[+()\d\s-]{7,20}$/.test(v)&&v.replace(/\D/g,'').length>=7;
-function msg(id,t,ok){const m=$('#'+id);m.className='msg '+(ok?'ok':'err');m.textContent=t}
-const fe=e=>({'auth/invalid-credential':'Incorrect email or password','auth/wrong-password':'Incorrect email or password','auth/user-not-found':'No account found with this email','auth/email-already-in-use':'This email is already registered','auth/weak-password':'Password must be at least 6 characters','auth/invalid-email':'Please enter a valid email','auth/network-request-failed':'Network problem. Check your internet'}[e.code]||e.message);
-const ST=['Pending','Confirmed','Processing','Ready / Dispatched','Completed'];
-let ADDR=[],ORD=[];
-function login(){const e=$('#le').value.trim(),p=$('#lp').value;if(!e||!p)return msg('lmsg','Enter your email and password',0);msg('lmsg','',1);auth.signInWithEmailAndPassword(e,p).catch(x=>msg('lmsg',fe(x),0))}
-function reset(){const m=$('#le').value.trim();if(!m)return msg('lmsg','Type your email in the Login box first',0);auth.sendPasswordResetEmail(m).then(()=>msg('lmsg','Reset link sent to your email',1)).catch(x=>msg('lmsg',fe(x),0))}
-async function register(){
- const n=$('#rn').value.trim(),ph=$('#rph').value.trim(),e=$('#re').value.trim(),p=$('#rp').value;
- if(n.length<2)return msg('rmsg','Please enter your full name',0);
- if(!validPhone(ph))return msg('rmsg','Please enter a valid phone number',0);
- if(!/^\S+@\S+\.\S+$/.test(e))return msg('rmsg','Please enter a valid email',0);
- if(p.length<6)return msg('rmsg','Password must be at least 6 characters',0);
- try{const c=await auth.createUserWithEmailAndPassword(e,p);
-  await db.collection('customers').doc(c.user.uid).set({name:n,phone:ph,email:e,address:'',addresses:[],date:new Date().toISOString()});
-  loadAccount(c.user)}catch(x){msg('rmsg',fe(x),0)}}
-async function saveP(){const ph=$('#pph').value.trim();if($('#pn').value.trim().length<2)return msg('pmsg','Please enter your name',0);if(ph&&!validPhone(ph))return msg('pmsg','Please enter a valid phone number',0);
- try{await db.collection('customers').doc(auth.currentUser.uid).set({name:$('#pn').value.trim(),phone:ph,address:$('#pa').value.trim()},{merge:true});msg('pmsg','Profile saved',1)}catch(e){msg('pmsg',e.message,0)}}
-function drawAddr(){$('#alist').innerHTML=ADDR.length?ADDR.map((a,k)=>`<tr><td><b>${esc(a.label)}</b><br>${esc(a.text)}</td><td><button onclick="defAddr(${k})">Use as default</button> <button onclick="delAddr(${k})">Delete</button></td></tr>`).join(''):'<tr><td>No saved addresses yet</td></tr>'}
-async function saveAddr(){try{await db.collection('customers').doc(auth.currentUser.uid).set({addresses:ADDR},{merge:true});drawAddr();msg('amsg','Saved',1)}catch(e){msg('amsg',e.message,0)}}
-async function addAddr(){const l=$('#al').value.trim(),t=$('#at').value.trim();if(t.length<6)return msg('amsg','Please enter the full address',0);ADDR.push({label:l||'Address',text:t});$('#al').value='';$('#at').value='';await saveAddr()}
-async function delAddr(k){ADDR.splice(k,1);await saveAddr()}
-async function defAddr(k){try{await db.collection('customers').doc(auth.currentUser.uid).set({address:ADDR[k].text},{merge:true});$('#pa').value=ADDR[k].text;msg('amsg','Default delivery address updated',1)}catch(e){msg('amsg',e.message,0)}}
-function track(s){if(s==='Cancelled')return'<div class="steps"><span class="bad">Cancelled</span></div>';const i=ST.indexOf(s);return'<div class="steps">'+ST.map((x,k)=>`<span class="${k<=i?'done':''}">${x}</span>`).join('')+'</div>'}
-function tog(k){const r=$('#od'+k);r.style.display=r.style.display==='none'?'':'none'}
-async function loadAccount(u){
- try{const d=await db.collection('customers').doc(u.uid).get();const x=d.data()||{};
-  $('#pn').value=x.name||'';$('#pph').value=x.phone||'';$('#pa').value=x.address||'';ADDR=Array.isArray(x.addresses)?x.addresses:[];drawAddr();
-  const s=await db.collection('orders').where('uid','==',u.uid).get();
-  ORD=s.docs.map(d=>d.data()).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-  $('#ords').innerHTML='<tr><th>Order</th><th>Date</th><th>Total</th><th>Status</th><th></th></tr>'+(ORD.length?ORD.map((x,k)=>{
-   const items=(x.items||[]).map(i=>`${esc(i.name)}${i.variant?' ('+esc(i.variant)+')':''} × ${esc(i.qty)}`).join('<br>');
-   return`<tr><td>${esc(x.orderNo)}</td><td>${esc((x.date||'').slice(0,10))}</td><td>Rs ${esc(x.total)}</td><td>${esc(x.status)}</td><td><button onclick="tog(${k})">Details</button></td></tr>
-   <tr id="od${k}" style="display:none"><td colspan=5>${track(x.status)}<p><b>Items</b><br>${items}</p><p>Discount: Rs ${esc(x.discount||0)}${x.coupon?' ('+esc(x.coupon)+')':''}<br>Total: Rs ${esc(x.total)}</p>
-   <p><b>Deliver to</b><br>${esc(x.address)}</p><p>Payment: ${esc(x.payment||'')}</p>${x.notes?`<p>Notes: ${esc(x.notes)}</p>`:''}</td></tr>`}).join(''):'<tr><td colspan=5>No orders yet</td></tr>')
- }catch(e){msg('pmsg',e.message,0)}}
-auth.onAuthStateChanged(u=>{$('#out').style.display=u?'none':'block';$('#in').style.display=u?'block':'none';if(u)loadAccount(u)});
-</script></body></html>
+<script src="js/firebase-config.js"></script><script src="js/account.js"></script>
+</body></html>
