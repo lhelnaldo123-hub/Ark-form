@@ -1,15 +1,18 @@
-// Edit / hide / archive / delete for Products, Categories, Packages and Offers
+// Edit / hide / archive / delete for Products, Categories, Banners, Packages and Offers
 const MANAGE={
  products:{sec:'products',title:'Manage Products',flag:'published',cols:['name','category','price'],
-  fields:[['name','Name','text'],['sku','SKU / code (optional)','text'],['category','Category','cat'],['price','Price','number'],['salePrice','Sale price (optional)','number'],['image','Main image URL','text'],['images','More image URLs (comma separated)','text'],['variants','Sizes / variants (comma separated)','text'],['specs','Specifications','area'],['description','Description','area'],['stock','In stock','check'],['featured','Featured on home page','check'],['published','Published (visible on website)','check']]},
+  fields:[['name','Name','text'],['sku','SKU / code (optional)','text'],['category','Category','cat'],['price','Price','number'],['salePrice','Sale price (optional)','number'],['image','Main photo','img'],['images','More photos','imgs'],['variants','Sizes / variants (comma separated)','text'],['specs','Specifications','area'],['description','Description','area'],['stock','In stock','check'],['featured','Featured on home page','check'],['published','Published (visible on website)','check']]},
  categories:{sec:'categories',title:'Manage Categories',flag:'active',cols:['name','description','order'],
-  fields:[['name','Category name','text'],['description','Description','area'],['image','Image URL','text'],['order','Display order','number'],['active','Enabled (visible on website)','check']]},
+  fields:[['name','Category name','text'],['description','Description','area'],['image','Category photo','img'],['order','Display order','number'],['active','Enabled (visible on website)','check']]},
+ banners:{sec:'banners',title:'Manage Banners',flag:'active',cols:['title','subtitle','order'],
+  fields:[['title','Title','text'],['subtitle','Subtitle','text'],['image','Banner photo','img'],['btn','Button text','text'],['link','Button link (#products, #offers or a web address)','text'],['order','Display order','number'],['active','Active (shown on website)','check']]},
  packages:{sec:'packages',title:'Manage Packages',flag:'active',cols:['name','items','price'],
   fields:[['name','Package name','text'],['items','Included items','area'],['normal','Normal price','number'],['price','Package price','number'],['validity','Valid until','date'],['conditions','Conditions','text'],['options','Customisation options','text'],['active','Active (visible on website)','check']]},
  offers:{sec:'offers',title:'Manage Offers',flag:'active',cols:['title','code','value'],
-  fields:[['title','Title','text'],['code','Coupon code','text'],['details','Details','area'],['image','Banner image URL','text'],['type','Type','select:percent|fixed'],['value','Discount value','number'],['min','Minimum spend','number'],['start','Start date','date'],['expiry','Expiry date','date'],['limit','Usage limit (optional)','number'],['eligible','Eligible categories / product names (comma separated, empty = all)','text'],['active','Active','check']]}
+  fields:[['title','Title','text'],['code','Coupon code','text'],['details','Details','area'],['image','Banner photo','img'],['type','Type','select:percent|fixed'],['value','Discount value','number'],['min','Minimum spend','number'],['start','Start date','date'],['expiry','Expiry date','date'],['limit','Usage limit (optional)','number'],['eligible','Eligible categories / product names (comma separated, empty = all)','text'],['active','Active','check']]}
 };
 const DEF={stock:true,published:true,active:true,featured:false};
+const thumbOf=r=>{const u=splitImgs2(r.image)[0]||splitImgs2(r.images)[0];return u?`<img class="tn" src="${esc(u)}" alt="">`:''};
 function renderManage(){
  const cats=[...new Set([...DATA.categories.map(c=>c.name),...DATA.products.map(p=>p.category)].filter(Boolean))];
  $('#catlist').innerHTML=cats.map(c=>`<option value="${esc(c)}">`).join('');
@@ -17,7 +20,7 @@ function renderManage(){
   const m=MANAGE[c],box=$('#mg-'+c);if(!box||!can(m.sec))continue;
   const rows=DATA[c]||[];
   box.innerHTML=`<h3>${m.title}</h3><div class="wrap"><table><tr>${m.cols.map(k=>`<th>${esc(k)}</th>`).join('')}<th>Status</th><th></th></tr>`+
-   (rows.length?rows.map(r=>`<tr>${m.cols.map(k=>`<td>${esc(r[k])}</td>`).join('')}<td>${r.archived?'Archived':r[m.flag]===false?'Hidden':'Live'}${c==='offers'?`<br><span class="tag">Used ${+r.used||0}${r.limit?' / '+esc(r.limit):''}</span>`:''}</td>
+   (rows.length?rows.map(r=>`<tr>${m.cols.map((k,i)=>`<td>${i===0?thumbOf(r):''}${esc(r[k])}</td>`).join('')}<td>${r.archived?'Archived':r[m.flag]===false?'Hidden':'Live'}${c==='offers'?`<br><span class="tag">Used ${+r.used||0}${r.limit?' / '+esc(r.limit):''}</span>`:''}</td>
    <td><button class="sm" onclick="mEdit('${c}','${esc(r.id)}')">Edit</button> <button class="sm" onclick="mToggle('${c}','${esc(r.id)}')">${r[m.flag]===false?'Show':'Hide'}</button>${c==='products'?` <button class="sm" onclick="mArchive('${esc(r.id)}')">Archive</button>`:''} <button class="sm" onclick="mDel('${c}','${esc(r.id)}')">Delete</button></td></tr>`).join('')
    :`<tr><td colspan="${m.cols.length+2}">Nothing added yet</td></tr>`)+'</table></div>';
  }
@@ -26,6 +29,7 @@ function mEdit(c,id){
  const m=MANAGE[c],r=(DATA[c]||[]).find(x=>x.id===id);if(!r)return;
  const f=m.fields.map(([k,label,t])=>{
   const v=r[k];let inp;
+  if(t==='img'||t==='imgs')return`<div class="imgw" data-name="${k}" data-multi="${t==='imgs'?1:0}" data-max="${c==='banners'?1200:800}" data-label="${esc(label)}"></div>`;
   if(t==='area')inp=`<textarea name="${k}" rows="3">${esc(v)}</textarea>`;
   else if(t==='check')inp=`<input type="checkbox" name="${k}" style="width:auto" ${(v===undefined?DEF[k]:!!v)?'checked':''}>`;
   else if(t.startsWith('select:'))inp=`<select name="${k}">${t.slice(7).split('|').map(o=>`<option ${o===v?'selected':''}>${o}</option>`).join('')}</select>`;
@@ -33,7 +37,8 @@ function mEdit(c,id){
   else inp=`<input name="${k}" type="${t}" value="${esc(v)}">`;
   return`<label class="tag">${esc(label)}</label>${inp}`;
  }).join('');
- showDlg(`<form onsubmit="mSave(event,'${c}','${esc(id)}')"><h3 style="margin-top:0">Edit</h3>${f}<br><button>Save changes</button> <button type="button" style="background:#667" onclick="closeDlg()">Cancel</button></form>`);
+ showDlg(`<form onsubmit="mSave(event,'${c}','${esc(id)}')"><h3 style="margin-top:0">Edit</h3>${f}<br><button>Save changes</button> <button type="button" class="dk" onclick="closeDlg()">Cancel</button></form>`);
+ m.fields.forEach(([k,,t])=>{if(t==='img'||t==='imgs'){const w=document.querySelector('#dlg .imgw[data-name="'+k+'"]');if(w)buildImg(w,r[k])}});
 }
 async function mSave(e,c,id){
  e.preventDefault();if(!can(MANAGE[c].sec))return alert('You do not have permission');
