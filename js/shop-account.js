@@ -89,7 +89,7 @@
     if (u) unsubBell = db.collection('messages').where('uid', '==', u.uid).where('read', '==', false).onSnapshot(s => { un = s.size; paint(); }, () => {});
     const box = document.getElementById('dAuth');
     if (box) box.innerHTML = u
-      ? `<b>👋 ${esc(u.displayName || u.email)}</b><a class="btn sm" href="account.html">My profile</a><a class="btn dk sm" href="account.html#orders">My orders</a><a class="btn dk sm" href="account.html#inbox" style="margin-top:6px">🔔 Inbox<span id="dInbox"></span></a><br><br><button class="btn-out sm" onclick="drawerLogout()">Log out</button>`
+      ? `<b>👋 ${esc(u.displayName || u.email)}</b><a class="btn sm" href="account.html">My profile</a><a class="btn dk sm" href="account.html#track">📍 Track order</a><a class="btn dk sm" href="account.html#inbox" style="margin-top:6px">🔔 Inbox<span id="dInbox"></span></a><br><br><button class="btn-out sm" onclick="drawerLogout()">Log out</button>`
       : `<b>Welcome!</b><a class="btn sm" href="account.html">Login / Register</a>`;
     paint();
     if (u) setTimeout(() => rateCheck(u), 2500);
