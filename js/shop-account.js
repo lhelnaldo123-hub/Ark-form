@@ -31,6 +31,7 @@
       setTimeout(() => { location.href = 'account.html?next=cart'; }, 900);
       return;
     }
+    try { const st = await db.collection('staff').doc(auth.currentUser.uid).get(); if (st.exists) return fmsg(f, 'You are logged in as staff. Please log out and use a customer account to place an order.', 0); } catch (x) {}
     if (!cart.length) return fmsg(f, 'Your cart is empty', 0);
     if (v('name').length < 2) return fmsg(f, 'Please enter your full name', 0);
     if (!validPhone(v('phone'))) return fmsg(f, 'Please enter a valid phone number', 0);
