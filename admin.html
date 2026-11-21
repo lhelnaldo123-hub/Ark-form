@@ -35,9 +35,10 @@ label.btn{display:inline-block;margin:0}
 .tl{list-style:none;margin:6px 0;padding:0 0 0 12px;border-left:2px solid #d5d9e2}.tl li{margin:4px 0;font-size:13px}
 @media print{header,#nav,.noprint,button{display:none!important}}
 </style></head><body class="adm">
-<header><b>ARK Admin Panel</b><a href="index.html">Preview site</a></header><main>
-<div id="login" class="card"><h3 style="margin-top:0">Admin Login</h3><input id="em" type="email" placeholder="Email"><input id="pw" type="password" placeholder="Password"><button onclick="doLogin()">Login</button>
-<p><a href="#" onclick="forgot();return false">Forgot password?</a></p><p id="loginMsg" style="color:#b00020"></p></div>
+<header><b>ARK Admin Panel</b><a href="index.html" id="siteLink">Go to site</a></header><main>
+<div id="login" class="card"><h3 style="margin-top:0">Admin / Staff Login</h3><p class="tag" style="margin-top:-4px">For ARK Form Center staff only. Staff accounts are created by the Administrator.</p><input id="em" type="email" placeholder="Email"><input id="pw" type="password" placeholder="Password"><button onclick="doLogin()">Login</button>
+<p><a href="#" onclick="forgot();return false">Forgot password?</a></p><p id="loginMsg" style="color:#b00020"></p>
+<hr style="border:0;border-top:1px solid #e3e6ec;margin:12px 0"><p class="tag" style="margin:0 0 8px">Are you a customer?</p><a class="btn sm" href="index.html">Go to site</a> <a class="btn dk sm" href="account.html">Customer login / Register</a></div>
 <div id="panel" style="display:none">
 <div class="adm-bar"><button class="sm dk" id="admBack" onclick="admBack()" style="display:none">← Back</button><b id="who"></b> <button class="sm dk" onclick="auth.signOut()">Logout</button></div>
 <div id="nav"></div>
@@ -135,7 +136,7 @@ async function fetchAll(){
 }
 async function refresh(){await fetchAll();RENDERS.forEach(f=>{try{f()}catch(e){console.error(e)}})}
 auth.onAuthStateChanged(async u=>{
- ME=null;SECH.length=0;$('#panel').style.display='none';$('#login').style.display='block';
+ ME=null;SECH.length=0;{const sl=$('#siteLink');if(sl)sl.textContent='Go to site'}$('#panel').style.display='none';$('#login').style.display='block';
  if(!u)return;
  try{
   const d=await db.collection('staff').doc(u.uid).get();
@@ -149,7 +150,7 @@ auth.onAuthStateChanged(async u=>{
   await auth.signOut();
   $('#loginMsg').textContent='Could not verify staff access: '+e.message;return;
  }
- $('#login').style.display='none';$('#panel').style.display='block';
+ $('#login').style.display='none';$('#panel').style.display='block';{const sl=$('#siteLink');if(sl)sl.textContent='Preview site'}
  $('#who').textContent=ME.name+' ('+ME.role+')';
  $('#nav').innerHTML=ME.allowed.map(s=>`<button data-s="${s}" onclick="go('${s}')">${LABEL[s]}</button>`).join('');
  go('dashboard');refresh();
