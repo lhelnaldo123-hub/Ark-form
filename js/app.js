@@ -384,7 +384,11 @@ async function sendEnquiry(e) {
 }
 
 // ---------- start ----------
+// staff / admin accounts only PREVIEW the shop: they are never treated as customers
+const _staffC = {};
+const isStaff = u => u ? (_staffC[u.uid] = _staffC[u.uid] || db.collection('staff').doc(u.uid).get().then(d => d.exists && d.data().active !== false).catch(() => false)) : Promise.resolve(false);
 firebase.auth().onAuthStateChanged(async u => {
+  if (u && await isStaff(u)) return;
   const fm0 = $('#coForm'), b0 = fm0.querySelector('button:not([type=button])'), n0 = $('#loginNote');
   if (b0) b0.textContent = u ? 'Place Order' : 'Log in to place order';
   if (n0) n0.style.display = u ? 'none' : '';
