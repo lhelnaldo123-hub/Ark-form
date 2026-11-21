@@ -8,8 +8,8 @@
   "background_color": "#0f2342",
   "theme_color": "#0a1830",
   "icons": [
-    { "src": "icons/ark-form-center-logo-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icons/ark-form-center-logo-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "icons/ark-form-center-logo-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "ark-form-center-logo-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "ark-form-center-logo-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "ark-form-center-logo-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
