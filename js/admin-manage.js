@@ -19,7 +19,8 @@ function renderManage(){
  for(const c in MANAGE){
   const m=MANAGE[c],box=$('#mg-'+c);if(!box||!can(m.sec))continue;
   const rows=DATA[c]||[];
-  box.innerHTML=`<h3>${m.title}</h3><div class="wrap"><table><tr>${m.cols.map(k=>`<th>${esc(k)}</th>`).join('')}<th>Status</th><th></th></tr>`+
+  const sampleNote=(c==='products'&&!rows.length)?`<div class="samplebox"><b>The website is showing 8 sample products.</b> They are not in your database yet, so they cannot be edited here.<br><button class="sm" style="margin-top:8px" onclick="importSamples()">Import sample products so I can edit them</button></div>`:'';
+  box.innerHTML=sampleNote+`<h3>${m.title}</h3><div class="wrap"><table><tr>${m.cols.map(k=>`<th>${esc(k)}</th>`).join('')}<th>Status</th><th></th></tr>`+
    (rows.length?rows.map(r=>`<tr>${m.cols.map((k,i)=>`<td>${i===0?thumbOf(r):''}${esc(r[k])}</td>`).join('')}<td>${r.archived?'Archived':r[m.flag]===false?'Hidden':'Live'}${c==='offers'?`<br><span class="tag">Used ${+r.used||0}${r.limit?' / '+esc(r.limit):''}</span>`:''}</td>
    <td><button class="sm" onclick="mEdit('${c}','${esc(r.id)}')">Edit</button> <button class="sm" onclick="mToggle('${c}','${esc(r.id)}')">${r[m.flag]===false?'Show':'Hide'}</button>${c==='products'?` <button class="sm" onclick="mArchive('${esc(r.id)}')">Archive</button>`:''} <button class="sm" onclick="mDel('${c}','${esc(r.id)}')">Delete</button></td></tr>`).join('')
    :`<tr><td colspan="${m.cols.length+2}">Nothing added yet</td></tr>`)+'</table></div>';
@@ -65,5 +66,13 @@ async function mDel(c,id){
  const r=DATA[c].find(x=>x.id===id);
  if(!can(MANAGE[c].sec)||!confirm('Delete this item permanently? Use Hide or Archive if you may need it again.'))return;
  try{await db.collection(c).doc(id).delete();logAct('Deleted '+c.slice(0,-1),r.name||r.title||'');refresh()}catch(er){alert(er.message)}
+}
+// copies the 8 sample products (and their 3 categories) into Firestore so they can be edited, re-photographed or deleted
+async function importSamples(){
+ if(!can('products')||!confirm('Import the 8 sample products and 3 categories into your database? You can then edit or delete them.'))return;
+ const cats=['Category 1','Category 2','Category 3'],prods=[[1,0],[2,0],[3,0],[4,1],[5,1],[6,2],[7,2],[8,2]],now=new Date().toISOString(),b=db.batch();
+ cats.forEach((n,i)=>b.set(db.collection('categories').doc('s'+(i+1)),{name:n,description:'',order:i+1,active:true,date:now}));
+ prods.forEach(([n,c])=>b.set(db.collection('products').doc('d'+n),{name:'Sample Product '+n,category:cats[c],price:0,stock:true,published:true,featured:false,description:'Sample item - replace it with a real product.',image:'',date:now}));
+ try{await b.commit();logAct('Imported sample products','8 products');alert('Done. You can now Edit each product (name, price, description, photos).');refresh()}catch(er){alert('Could not import: '+er.message)}
 }
 RENDERS.push(renderManage);
