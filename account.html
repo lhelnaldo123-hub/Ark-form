@@ -15,7 +15,7 @@
 <!-- LOGGED IN -->
 <div id="in" style="display:none">
  <div class="acct-hero"><div class="av" id="av">A</div><div class="who"><b id="hn"></b><span id="he"></span></div><button class="btn-out" onclick="doLogout()">Log out</button></div>
- <div class="atabs" id="atabs"><button data-t="profile" onclick="showTab('profile')">👤 Profile</button><button data-t="orders" onclick="showTab('orders')">📦 My Orders</button><button data-t="addresses" onclick="showTab('addresses')">📍 Addresses</button></div>
+ <div class="atabs" id="atabs"><button data-t="profile" onclick="showTab('profile')">👤 Profile</button><button data-t="orders" onclick="showTab('orders')">📦 My Orders</button><button data-t="wishlist" onclick="showTab('wishlist')">❤️ Wishlist</button><button data-t="track" onclick="showTab('track')">📍 Track Order</button><button data-t="inbox" onclick="showTab('inbox')">🔔 Inbox<span class="nb" id="nb" style="display:none">0</span></button><button data-t="addresses" onclick="showTab('addresses')">🏠 Addresses</button></div>
 
  <div id="t-profile">
   <div class="card"><h3 style="margin-top:0">My Profile</h3><input id="pn" placeholder="Name"><input id="pph" type="tel" placeholder="Phone"><input id="pa" placeholder="Default delivery address">
@@ -24,7 +24,26 @@
 
  <div id="t-orders">
   <h3 style="margin-top:0">My orders</h3>
+  <p class="tag" id="retline"></p>
   <div id="ords"><p>Loading...</p></div>
+ </div>
+
+ <div id="t-wishlist">
+  <h3 style="margin-top:0">My wishlist</h3>
+  <div id="wlist"><p>Loading...</p></div>
+ </div>
+
+ <div id="t-track">
+  <h3 style="margin-top:0">Track my order</h3>
+  <div class="trkbox"><input id="tno" placeholder="Order number, e.g. ORD1234567" onkeydown="if(event.key==='Enter')trackNo()"><button onclick="trackNo()">Track</button></div>
+  <div id="trkres"></div>
+  <h4>Orders in progress</h4>
+  <div id="trkactive"></div>
+ </div>
+
+ <div id="t-inbox">
+  <h3 style="margin-top:0">Inbox</h3>
+  <div id="msgs"><p>Loading...</p></div>
  </div>
 
  <div id="t-addresses">
