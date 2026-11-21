@@ -16,6 +16,7 @@ Built with plain **HTML, CSS and JavaScript** and **Firebase** (Authentication +
 | File | Purpose |
 |---|---|
 | `index.html` | Public website (all public pages are sections routed by `#hash`) |
+| `register.html` | Customer registration page (linked from the login page) |
 | `account.html` | Customer account: profile, My Orders, Track Order, Inbox, Addresses |
 | `admin.html` | Admin panel (staff login) |
 | `manifest.webmanifest`, `sw.js`, `js/install.js`, `ark-form-center-logo-*.png` | Install-as-app support (see "Install as an app") |
@@ -55,7 +56,7 @@ The site can be installed on a phone or computer like an app. `manifest.webmanif
 
 ## Who logs in where
 
-* **Customers:** `account.html` (Login / Register). Reached from the 👤 icon and ☰ menu in the shop.
+* **Customers:** `account.html` is the login page; its "Create an account" link opens the separate `register.html` page (and register.html links back to Login). Both are reached from the 👤 icon and ☰ menu in the shop. Reached from the 👤 icon and ☰ menu in the shop.
 * **Staff (Administrator, Manager, Support):** `admin.html`. Reached from **Admin Login** in the shop footer, from the "Shop staff? Admin / Staff login" link on the customer login page, or by typing the address. Staff never register themselves; the Administrator creates their accounts in Staff & Roles. A customer account cannot open the admin panel.
 * The admin login page has **Go to site** and **Customer login / Register** buttons. Once logged in, the header link reads **Preview site**.
 
@@ -110,7 +111,7 @@ The brief says not to invent business details. These are editable placeholders u
 * Reports cover orders, products, coupons, customers and enquiries; CSV export is for orders only.
 * Return handling is for the whole order, not single items; the return window is one shop-wide setting.
 * Form validation is done in the browser, and Firestore rules protect who may change what. Full server-side field validation would need Cloud Functions.
-* "Reset Password" is Firebase's emailed link rather than a separate page in the site.
+* "Reset Password" is Firebase's emailed link rather than a separate page in the site. The email comes from a Firebase "noreply" address and often lands in **Spam / Promotions**. It is only sent to an email that is registered. Firebase's **Email enumeration protection** (Console > Authentication > Settings > User actions) hides whether an email exists; while it is ON the site cannot tell a customer "you have not registered", so the message says "if this email is registered...". Turn it OFF if you want the exact "No account found, register now" message. Also check that the site domain is listed under Authentication > Settings > Authorized domains.
 
 ## Assumptions to confirm with the Supervisor
 
