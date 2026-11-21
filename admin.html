@@ -38,7 +38,7 @@ label.btn{display:inline-block;margin:0}
 <div id="login" class="card"><h3 style="margin-top:0">Admin Login</h3><input id="em" type="email" placeholder="Email"><input id="pw" type="password" placeholder="Password"><button onclick="doLogin()">Login</button>
 <p><a href="#" onclick="forgot();return false">Forgot password?</a></p><p id="loginMsg" style="color:#b00020"></p></div>
 <div id="panel" style="display:none">
-<p><b id="who"></b> <button class="sm dk" onclick="auth.signOut()">Logout</button></p>
+<div class="adm-bar"><button class="sm dk" id="admBack" onclick="admBack()" style="display:none">← Back</button><b id="who"></b> <button class="sm dk" onclick="auth.signOut()">Logout</button></div>
 <div id="nav"></div>
 
 <div data-sec="dashboard"><h3>Dashboard</h3><div class="grid" id="stats"></div>
@@ -113,7 +113,11 @@ const DCOLS=['products','categories','banners','packages','offers','orders','enq
 let ME=null,DATA={},CURSEC='dashboard';
 const RENDERS=[];
 const can=s=>!!ME&&ME.allowed.includes(s);
-function go(s){if(!can(s))s='dashboard';CURSEC=s;
+const SECH=[];
+function admBack(){if(SECH.length>1){SECH.pop();go(SECH[SECH.length-1],true)}else go('dashboard',true)}
+function go(s,isBack){if(!can(s))s='dashboard';CURSEC=s;
+ if(!isBack&&SECH[SECH.length-1]!==s)SECH.push(s);
+ const bb=$('#admBack');if(bb)bb.style.display=SECH.length>1?'':'none';
  document.querySelectorAll('[data-sec]').forEach(el=>el.style.display=el.dataset.sec===s?'':'none');
  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));scrollTo(0,0)}
 function showDlg(h){const d=$('#dlg');d.innerHTML=h;if(!d.open)d.showModal()}
@@ -130,7 +134,7 @@ async function fetchAll(){
 }
 async function refresh(){await fetchAll();RENDERS.forEach(f=>{try{f()}catch(e){console.error(e)}})}
 auth.onAuthStateChanged(async u=>{
- ME=null;$('#panel').style.display='none';$('#login').style.display='block';
+ ME=null;SECH.length=0;$('#panel').style.display='none';$('#login').style.display='block';
  if(!u)return;
  try{
   const d=await db.collection('staff').doc(u.uid).get();
