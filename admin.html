@@ -163,4 +163,4 @@ async function add(e,c){e.preventDefault();if(!can(c))return alert('You do not h
  if(c==='offers')o.used=0;
  if(c==='packages')o.featured=!!o.featured;
  try{await db.collection(c).add(o);e.target.reset();initImgs(e.target);logAct('Added '+c.slice(0,-1),o.name||o.title||'');alert('Saved');refresh()}catch(er){alert(er.message)}}
-</script><script src="js/admin-images.js"></script><script src="js/admin-extra.js"></script><script src="js/admin-manage.js"></script><script src="js/admin-orders.js"></script><script src="js/admin-tools.js"></script></body></html>
+</script><script src="js/admin-images.js"></script><script src="js/admin-extra.js"></script><script src="js/admin-manage.js"></script><script src="js/admin-orders.js"></script><script src="js/admin-tools.js"></script><script src="js/pwd-eye.js"></script></body></html>
