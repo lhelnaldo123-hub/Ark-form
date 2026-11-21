@@ -142,3 +142,6 @@ body.adm #nav button[data-s=board]::before{content:"\1F69A"}
 .adm-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 6px}
 .adm-bar .sm{margin:0}
 .samplebox{background:#fff7e0;border:1.5px solid var(--gold);border-radius:14px;padding:12px 14px;margin:10px 0;font-size:14px}
+
+.prevbar{background:#1c4272;color:#fff;text-align:center;font-size:13px;font-weight:600;padding:8px 12px;position:sticky;top:0;z-index:60}
+.prevbar a{color:#f0d28a;margin-left:8px;font-weight:700}
