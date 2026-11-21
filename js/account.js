@@ -5,7 +5,7 @@ const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const validPhone = v => /^[+()\d\s-]{7,20}$/.test(v) && v.replace(/\D/g, '').length >= 7;
 const money = n => 'Rs ' + Number(n || 0).toLocaleString();
 function msg(id, t, ok) { const m = $('#' + id); m.className = 'msg ' + (ok ? 'ok' : 'err'); m.textContent = t; }
-const fe = e => ({ 'auth/invalid-credential': 'Incorrect email or password', 'auth/wrong-password': 'Incorrect email or password', 'auth/user-not-found': 'No account found with this email', 'auth/email-already-in-use': 'This email is already registered', 'auth/weak-password': 'Password must be at least 6 characters', 'auth/invalid-email': 'Please enter a valid email', 'auth/network-request-failed': 'Network problem. Check your internet' }[e.code] || e.message);
+const fe = e => ({ 'auth/invalid-credential': 'Incorrect email or password', 'auth/wrong-password': 'Incorrect email or password', 'auth/user-not-found': 'No account found with this email', 'auth/email-already-in-use': 'This email is already registered', 'auth/weak-password': 'Password must be at least 6 characters', 'auth/invalid-email': 'Please enter a valid email', 'auth/network-request-failed': 'Network problem. Check your internet', 'auth/too-many-requests': 'Too many tries. Please wait a few minutes and try again' }[e.code] || e.message);
 
 // checkout sends people here with ?next=cart
 const NEXT_URL = new URLSearchParams(location.search).get('next') === 'cart' ? 'index.html#cart' : '';
@@ -20,8 +20,18 @@ function login() {
   msg('lmsg', '', 1); auth.signInWithEmailAndPassword(e, p).catch(x => msg('lmsg', fe(x), 0));
 }
 function reset() {
-  const m = $('#le').value.trim(); if (!m) return msg('lmsg', 'Type your email in the Login box first', 0);
-  auth.sendPasswordResetEmail(m).then(() => msg('lmsg', 'Reset link sent to your email', 1)).catch(x => msg('lmsg', fe(x), 0));
+  const m = $('#le').value.trim(), box = $('#lmsg'); if (!m) return msg('lmsg', 'Type your email in the Login box first', 0);
+  if (!/^\S+@\S+\.\S+$/.test(m)) return msg('lmsg', 'Please enter a valid email', 0);
+  const link = '<a href="register.html"><b>Register now →</b></a>';
+  box.className = 'msg'; box.textContent = 'Sending...';
+  auth.sendPasswordResetEmail(m).then(() => {
+    box.className = 'msg ok';
+    box.innerHTML = 'If <b>' + esc(m) + '</b> is registered, a reset link has been sent. Check your Inbox and also Spam / Promotions (it comes from a Firebase "noreply" address). No email after a few minutes? This email may not be registered. ' + link;
+  }).catch(x => {
+    box.className = 'msg err';
+    if (x.code === 'auth/user-not-found') box.innerHTML = 'No account was found with this email. You have not registered yet. ' + link;
+    else box.textContent = x.code === 'auth/too-many-requests' ? 'Too many tries. Please wait a few minutes and try again.' : fe(x);
+  });
 }
 async function register() {
   const n = $('#rn').value.trim(), ph = $('#rph').value.trim(), e = $('#re').value.trim(), p = $('#rp').value;
@@ -39,6 +49,7 @@ async function register() {
   } catch (x) { REGISTERING = false; msg('rmsg', fe(x), 0); }
 }
 function doLogout() { auth.signOut(); }
+{ const rl = document.getElementById('regLink'); if (rl && NEXT_URL) rl.href = 'register.html?next=cart'; }
 // back button: go to the page we came from, or the shop if there is none
 function goBack() { if (history.length > 1 && document.referrer) history.back(); else location.href = 'index.html'; }
 
