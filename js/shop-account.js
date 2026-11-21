@@ -86,7 +86,9 @@
 
   // ---- login state: note, button text, drawer, bell badge ----
   let unsubBell = null;
-  auth.onAuthStateChanged(u => {
+  auth.onAuthStateChanged(async u0 => {
+    const staff = await isStaff(u0), u = staff ? null : u0;
+    const pv = document.getElementById('prevbar'); if (pv) pv.style.display = staff ? '' : 'none';
     const f = document.getElementById('coForm'), b = f.querySelector('button:not([type=button])'), n = document.getElementById('loginNote');
     if (b) b.textContent = u ? 'Place Order' : 'Log in to place order';
     const to = document.getElementById('topOut'); if (to) to.style.display = u ? '' : 'none';
@@ -102,6 +104,11 @@
     if (box) box.innerHTML = u
       ? `<b>👋 ${esc(u.displayName || u.email)}</b><a class="btn sm" href="account.html">My profile</a><a class="btn dk sm" href="account.html#track">📍 Track order</a><a class="btn dk sm" href="account.html#inbox" style="margin-top:6px">🔔 Inbox<span id="dInbox"></span></a><br><br><button class="btn-out sm" onclick="drawerLogout()">Log out</button>`
       : `<b>Welcome!</b><a class="btn sm" href="account.html">Login / Register</a>`;
+    if (staff) {
+      if (b) b.textContent = 'Preview only - ordering is off';
+      if (n) { n.style.display = ''; n.textContent = '👁 Staff preview: placing orders is disabled. Use a customer account to test ordering.'; }
+      if (box) box.innerHTML = '<b>👁 Staff preview</b><a class="btn sm" href="admin.html">← Back to admin</a><br><br><button class="btn-out sm" onclick="drawerLogout()">Log out</button>';
+    }
     paint();
     if (u) setTimeout(() => rateCheck(u), 2500);
   });
