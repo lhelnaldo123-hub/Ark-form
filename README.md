@@ -18,6 +18,7 @@ Built with plain **HTML, CSS and JavaScript** and **Firebase** (Authentication +
 | `index.html` | Public website (all public pages are sections routed by `#hash`) |
 | `account.html` | Customer account: profile, My Orders, Track Order, Inbox, Addresses |
 | `admin.html` | Admin panel (staff login) |
+| `manifest.webmanifest`, `sw.js`, `js/install.js`, `icons/` | Install-as-app support (see "Install as an app") |
 | `css/style.css`, `css/extra.css` | Styles (extra.css holds account/tracking/inbox/admin additions) |
 | `js/firebase-config.js` | Firebase project settings |
 | `js/app.js` | Shop: products, categories, cart, coupons, enquiry form, routing, back button |
@@ -30,6 +31,16 @@ Built with plain **HTML, CSS and JavaScript** and **Firebase** (Authentication +
 | `firestore.rules` | Security rules (publish in Firebase Console; this copy is for documentation) |
 
 **Script order matters.** `index.html` loads: `app.js`, `site-content.js`, `fx.js`, `shop-account.js`, then `wishlist.js` last. `admin.html` loads `admin-orders.js` after `admin-extra.js`, and `admin-tools.js` last.
+
+## Install as an app (PWA)
+
+The site can be installed on a phone or computer like an app. `manifest.webmanifest`, `sw.js`, `js/install.js` and the `icons/` folder make this work; all are already linked from the pages.
+
+* **Android / Chrome:** open the menu (☰) and tap **📲 Install app**, or use the browser menu > Install app.
+* **iPhone / Safari:** tap Share, then **Add to Home Screen**.
+* **Computer (Chrome / Edge):** click the install icon in the address bar.
+* Needs **https** (GitHub Pages or Firebase Hosting both provide it). Upload `sw.js` and `manifest.webmanifest` in the **same folder as `index.html`**.
+* The service worker always loads the newest files when online and only uses its saved copy when offline. Shop data still needs an internet connection. When you change `sw.js`, raise the `CACHE` version number.
 
 ## Setup
 
@@ -67,7 +78,7 @@ The panel hides sections by role; **real enforcement is in `firestore.rules`**.
 
 * **Back buttons:** every shop page except Home has a "← Back" button (returns to the previous page; if the site was opened directly on that page it goes up one level). The account page has "← Back" in its header. The admin panel has "← Back" that returns to the previous section.
 * **My Account / My Orders while logged out:** the page shows "Loading..." until the login state is known (no login-form flash for logged-in users). Logged-out visitors who open My Orders, Track Order, Inbox or Wishlist see a message asking them to log in, then the login and register forms.
-* **Staff accounts are not customers:** the admin panel and the shop share one login in the same browser. If a staff / admin account opens My Account it sees a "logged in as staff" screen (link to the admin panel, log out) instead of customer orders, and it cannot place orders at checkout. Test the shop with a separate customer account. Orders placed earlier by a staff account remain in Firestore and can be deleted from Admin > Orders.
+* **Staff accounts are not customers:** the admin panel and the shop share one login in the same browser. If a staff / admin account opens My Account it sees a "logged in as staff" screen (link to the admin panel, log out) instead of customer orders, and it cannot place orders at checkout. The shop treats a staff login as a **preview**: a blue "Admin preview - Back to admin" bar shows, the drawer shows "Staff preview" instead of the staff email, checkout is not filled with the staff email and the wishlist is off. Admin's "Preview site" link opens this view. Test ordering with a separate customer account. Orders placed earlier by a staff account remain in Firestore and can be deleted from Admin > Orders.
 
 ## Admin panel (15 sections)
 
