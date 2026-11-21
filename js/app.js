@@ -86,6 +86,7 @@ function show() {
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('on', p.id === id));
   document.querySelectorAll('#tabs a').forEach(a => a.classList.toggle('on', a.dataset.p === id));
   document.body.dataset.pg = id;
+  const bb = $('#backbar'); if (bb) bb.style.display = id === 'home' ? 'none' : '';
   closeMenu(); lbClose();
   if (id === 'view') drawDetail(arg);
   if (id === 'category') drawCategory(arg);
@@ -93,7 +94,14 @@ function show() {
   document.body.classList.toggle('has-bar', id === 'view' && !!$('#detail .buybar'));
   scrollTo(0, 0);
 }
-addEventListener('hashchange', show);
+// back button: returns to the previous page; if the site was opened straight on this page, goes up one level
+let NAVN = 0;
+addEventListener('hashchange', () => { NAVN++; show(); });
+function goBack() {
+  if (NAVN > 0) { NAVN -= 2; history.back(); return; }
+  const h = (location.hash || '#home').slice(1).split('/')[0];
+  location.hash = h === 'view' || h === 'category' ? '#products' : h === 'confirm' ? '#home' : '#home';
+}
 
 function drawProducts() {
   const q = ($('#search').value || '').toLowerCase(), c = $('#cat').value;
