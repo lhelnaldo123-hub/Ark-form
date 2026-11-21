@@ -74,11 +74,21 @@
     if (c && !document.getElementById('rcvd')) c.insertAdjacentHTML('beforebegin', `<div class="gate" id="rcvd" style="background:#e6f6ea;border-color:#1b7f3b;color:#14602b">📦 Order received! Your tracking number is <b>${esc(no)}</b>. We also sent it to your Inbox.</div>`);
   };
 
+  // ---- keep the floating cart badge in step with the cart ----
+  const originalDraw = drawCart;
+  drawCart = function () {
+    originalDraw();
+    const n = cart.reduce((a, i) => a + i.qty, 0), c2 = document.getElementById('cartn2');
+    if (c2) { c2.textContent = n; c2.style.display = n ? '' : 'none'; }
+  };
+  drawCart();
+
   // ---- login state: note, button text, drawer, bell badge ----
   let unsubBell = null;
   auth.onAuthStateChanged(u => {
     const f = document.getElementById('coForm'), b = f.querySelector('button:not([type=button])'), n = document.getElementById('loginNote');
     if (b) b.textContent = u ? 'Place Order' : 'Log in to place order';
+    const to = document.getElementById('topOut'); if (to) to.style.display = u ? '' : 'none';
     if (n) n.style.display = u ? 'none' : '';
     if (unsubBell) { unsubBell(); unsubBell = null; }
     const bell = document.getElementById('inboxn'); let un = 0;
