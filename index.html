@@ -10,7 +10,9 @@
  <a class="brand" href="#home" id="brand">ARK Form Center</a>
  <form class="sbox" onsubmit="goSearch(event)"><input id="hs" type="search" placeholder="Search products..." autocomplete="off"><button>Search</button></form>
  <span class="sp"></span>
+ <a class="ib" href="account.html#inbox" aria-label="Messages">🔔<b class="bdg" id="inboxn" style="display:none">0</b></a>
  <a class="ib" href="account.html" aria-label="My account">👤</a>
+ <button class="tout" id="topOut" style="display:none" onclick="drawerLogout()">Log out</button>
   <a class="ib" href="#cart" aria-label="Cart">🛒<b class="bdg" id="cartn" style="display:none">0</b></a>
 </div>
 <nav class="tabs" id="tabs"><a href="#home" data-p="home">Home</a><a href="#products" data-p="products">Products</a><a href="#packages" data-p="packages">Packages</a><a href="#offers" data-p="offers">Offers</a><a href="#contact" data-p="contact">Contact</a></nav>
@@ -19,7 +21,7 @@
 <aside class="dr" id="dr">
  <div class="dh"><b>ARK Form Center</b><button class="ib" style="color:#fff" onclick="closeMenu()" aria-label="Close">✕</button></div>
  <div class="dauth" id="dAuth"><a class="btn sm" href="account.html">Login / Register</a></div>
- <h5>Menu</h5><a href="#home">Home</a><a href="#about">About Us</a><a href="#products">All Products</a><a href="#packages">Packages / Deals</a><a href="#offers">Offers &amp; Discounts</a><a href="#faq">FAQs</a><a href="#contact">Contact Us</a><a href="account.html">My Account</a><a href="account.html#orders">My Orders</a><a href="#cart">My Cart</a>
+ <h5>Menu</h5><a href="#home">Home</a><a href="#about">About Us</a><a href="#products">All Products</a><a href="#packages">Packages / Deals</a><a href="#offers">Offers &amp; Discounts</a><a href="#faq">FAQs</a><a href="#contact">Contact Us</a><a href="account.html">My Account</a><a href="account.html#wishlist">My Wishlist</a><a href="account.html#orders">My Orders</a><a href="account.html#track">Track Order</a><a href="account.html#inbox">Inbox</a><a href="#cart">My Cart</a>
  <h5>Shop by category</h5><div id="drCats"></div>
  <h5>Policies</h5><a href="#privacy">Privacy Policy</a><a href="#terms">Terms &amp; Conditions</a><a href="#returns">Return / Exchange</a>
  </aside>
@@ -31,6 +33,7 @@
   <button class="hn hp" onclick="heroGo(HI-1);heroStart()" aria-label="Previous">‹</button><button class="hn hnx" onclick="heroGo(HI+1);heroStart()" aria-label="Next">›</button>
   <div class="dots" id="dots"></div>
  </div>
+ <div class="floatband" id="floatband"><div class="fview"><div class="ftrack"></div></div></div>
 
 
  <div class="sh"><h3>Why choose ARK Form Center</h3></div><div id="whyBox" class="why"><div><strong>To be supplied</strong>Business strengths and service benefits will be added by ARK Form Center.</div></div>
@@ -78,6 +81,7 @@
  <div class="two"><div><div id="clist"></div>
   <div class="card"><h4>Have a coupon?</h4><input id="cc" placeholder="Coupon code" style="max-width:260px"> <button onclick="applyCoupon()">Apply</button><p id="cmsg" class="msg"></p></div></div>
  <form id="coForm" onsubmit="checkout(event)" class="card"><h3 style="margin-top:0">Checkout</h3><div id="sum" class="sum"></div>
+  <div class="mth"><label class="mopt"><input type="radio" name="method" value="Delivery" checked><span>🚚 Delivery</span></label><label class="mopt"><input type="radio" name="method" value="Pickup"><span>🏬 Pickup</span></label></div><p class="picknote" id="pickNote" style="display:none"></p>
   <input name="name" placeholder="Full name" required><input name="phone" type="tel" placeholder="Phone" required><input name="email" type="email" placeholder="Email (optional)"><input name="address" placeholder="Delivery address" required><textarea name="notes" placeholder="Order notes"></textarea>
   <label class="tag" id="payLbl">Payment method</label><select name="payment" id="paySel"></select><p class="tag" id="payNote"></p><p class="gate sm" id="loginNote">🔒 Please log in or register to place your order. Your cart is saved.</p><button>Place Order</button><p class="msg"></p></form></div></section>
 
@@ -92,14 +96,16 @@
  <div class="lbh">Pinch or double-tap to zoom · swipe for the next photo</div>
 </div>
 
+<a class="fcart" id="fcart" href="#cart" aria-label="Open cart">🛒<b class="bdg" id="cartn2" style="display:none">0</b></a>
+
 <footer><div class="fgrid">
 <div><h4>ARK Form Center</h4><p>Hyderabad, Sindh, Pakistan</p><div id="fContact"><p>Contact details to be supplied.</p></div><div id="fSocial"></div></div>
 <div><h4>Quick links</h4><a href="#home">Home</a><a href="#products">Products</a><a href="#packages">Packages</a><a href="#offers">Offers</a></div>
-<div><h4>Support</h4><a href="#contact">Contact Us</a><a href="#faq">FAQs</a><a href="#privacy">Privacy Policy</a><a href="#terms">Terms &amp; Conditions</a><a href="#returns">Return / Exchange</a><a href="account.html">My Account</a></div>
+<div><h4>Support</h4><a href="#contact">Contact Us</a><a href="#faq">FAQs</a><a href="#privacy">Privacy Policy</a><a href="#terms">Terms &amp; Conditions</a><a href="#returns">Return / Exchange</a><a href="account.html">My Account</a><a href="account.html#wishlist">Wishlist</a><a href="account.html#track">Track Order</a></div>
 <div><h4>Staff</h4><a href="admin.html">Admin Login</a></div></div>
 <p class="copy">© ARK Form Center. All rights reserved.</p></footer>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="js/firebase-config.js"></script><script src="js/app.js"></script><script src="js/site-content.js"></script></body></html>
+<script src="js/firebase-config.js"></script><script src="js/app.js"></script><script src="js/site-content.js"></script><script src="js/fx.js"></script><script src="js/shop-account.js"></script><script src="js/wishlist.js"></script></body></html>
