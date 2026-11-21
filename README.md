@@ -20,13 +20,13 @@ Built with plain **HTML, CSS and JavaScript** and **Firebase** (Authentication +
 | `admin.html` | Admin panel (staff login) |
 | `css/style.css`, `css/extra.css` | Styles (extra.css holds account/tracking/inbox/admin additions) |
 | `js/firebase-config.js` | Firebase project settings |
-| `js/app.js` | Shop: products, categories, cart, coupons, enquiry form, routing |
+| `js/app.js` | Shop: products, categories, cart, coupons, enquiry form, routing, back button |
 | `js/site-content.js` | Editable home/About/policy text and reviews from the admin |
 | `js/fx.js` | Visual effects: floating product band, draggable cart |
 | `js/shop-account.js` | Checkout (login required, Delivery/Pickup), notification bell, rating pop-up |
 | `js/wishlist.js` | Wishlist hearts on product cards and the product page |
 | `js/account.js` | Customer account logic (orders, wishlist, cancel, return, reorder, review, inbox) |
-| `js/admin-*.js` | Admin logic (images, manage, extra = orders/enquiries/reports/staff, orders = messages + returns, tools = charts + new-order alerts + change password) |
+| `js/admin-*.js` | Admin logic (images, manage (edit/hide/delete + sample import), extra = orders/enquiries/reports/staff, orders = messages + returns, tools = charts + new-order alerts + change password) |
 | `firestore.rules` | Security rules (publish in Firebase Console; this copy is for documentation) |
 
 **Script order matters.** `index.html` loads: `app.js`, `site-content.js`, `fx.js`, `shop-account.js`, then `wishlist.js` last. `admin.html` loads `admin-orders.js` after `admin-extra.js`, and `admin-tools.js` last.
@@ -63,6 +63,12 @@ The panel hides sections by role; **real enforcement is in `firestore.rules`**.
 * **Wishlist:** logged-in customers tap the heart on any product (card or product page) to save it. Saved items are listed under My Account > Wishlist with View / Add to cart / Remove. Stored in the customer's own record (`customers/<uid>.wishlist`). Admin > Reports shows the most wishlisted products.
 * **Reviews:** after delivery the customer rates each item; reviews show on the site only after admin approval.
 
+## Navigation and account behaviour
+
+* **Back buttons:** every shop page except Home has a "← Back" button (returns to the previous page; if the site was opened directly on that page it goes up one level). The account page has "← Back" in its header. The admin panel has "← Back" that returns to the previous section.
+* **My Account / My Orders while logged out:** the page shows "Loading..." until the login state is known (no login-form flash for logged-in users). Logged-out visitors who open My Orders, Track Order, Inbox or Wishlist see a message asking them to log in, then the login and register forms.
+* **Staff accounts are not customers:** the admin panel and the shop share one login in the same browser. If a staff / admin account opens My Account it sees a "logged in as staff" screen (link to the admin panel, log out) instead of customer orders, and it cannot place orders at checkout. Test the shop with a separate customer account. Orders placed earlier by a staff account remain in Firestore and can be deleted from Admin > Orders.
+
 ## Admin panel (15 sections)
 
 * **Dashboard:** summary cards, quick actions, and orders and enquiries charts for a chosen period (7/14/30/90 days or a custom date range; long periods show one bar per week).
@@ -74,7 +80,7 @@ Dashboard, Products, Categories, Banners, Packages, Offers/Coupons, Orders, Enqu
 
 ## Placeholders – to be supplied by ARK Form Center
 
-The brief says not to invent business details. These are editable placeholders until supplied: shop address, phone/WhatsApp, email, opening hours, map link, social links, About text, FAQs, Privacy Policy, Terms & Conditions, Return/Exchange Policy, final products, images and prices. The sample products from `fx.js` appear only while the shop has no products of its own.
+The brief says not to invent business details. These are editable placeholders until supplied: shop address, phone/WhatsApp, email, opening hours, map link, social links, About text, FAQs, Privacy Policy, Terms & Conditions, Return/Exchange Policy, final products, images and prices. The 8 sample products (defined in `js/app.js`) appear only while the shop has no products of its own. In Admin > Products, click **Import sample products so I can edit them** to copy them into the database; after that they can be edited, given photos or deleted like any product.
 
 ## Unfinished / not included (for the Supervisor)
 
@@ -96,4 +102,4 @@ The brief says not to invent business details. These are editable placeholders u
 
 ## Not yet verified
 
-All JavaScript files pass a syntax check, but the site was **not run against the live Firebase project** while preparing this handover. Before launch, test: admin alerts (place an order while the panel is open), dashboard period picker, change password, wishlist (heart, saved list, add to cart, remove), register, login, forgot password, checkout (Delivery and Pickup), cancel, return approval, reorder, review approval, each admin role, and the published Firestore rules (for example: a customer cannot read another customer's order, cannot change an order's status except to cancel before processing, and a Support user cannot open Settings).
+All JavaScript files pass a syntax check, but the site was **not run against the live Firebase project** while preparing this handover. Before launch, test: back buttons on all pages, My Orders when logged out and logged in, the staff-account screen, Import sample products, admin alerts (place an order while the panel is open), dashboard period picker, change password, wishlist (heart, saved list, add to cart, remove), register, login, forgot password, checkout (Delivery and Pickup), cancel, return approval, reorder, review approval, each admin role, and the published Firestore rules (for example: a customer cannot read another customer's order, cannot change an order's status except to cancel before processing, and a Support user cannot open Settings).
