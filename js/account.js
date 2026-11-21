@@ -39,6 +39,8 @@ async function register() {
   } catch (x) { REGISTERING = false; msg('rmsg', fe(x), 0); }
 }
 function doLogout() { auth.signOut(); }
+// back button: go to the page we came from, or the shop if there is none
+function goBack() { if (history.length > 1 && document.referrer) history.back(); else location.href = 'index.html'; }
 
 // ---------- tabs ----------
 const TABS = ['profile', 'orders', 'wishlist', 'track', 'inbox', 'addresses'];
@@ -267,8 +269,16 @@ function wAdd(id, btn) {
 }
 
 // ---------- enter / leave ----------
+async function isStaffUser(u) {
+  try { const d = await db.collection('staff').doc(u.uid).get(); return d.exists && d.data().active !== false; } catch (e) { return false; }
+}
 async function enter(u) {
-  $('#out').style.display = 'none'; $('#in').style.display = 'block'; $('#hOut').style.display = '';
+  $('#boot').style.display = 'none'; $('#out').style.display = 'none'; $('#hOut').style.display = '';
+  if (await isStaffUser(u)) {      // admin / staff accounts are not customers: never show customer orders
+    $('#in').style.display = 'none'; $('#staffbox').style.display = 'block';
+    $('#staffwho').textContent = u.email || ''; return;
+  }
+  $('#staffbox').style.display = 'none'; $('#in').style.display = 'block';
   $('#he').textContent = u.email || '';
   try {
     const x = (await db.collection('customers').doc(u.uid).get()).data() || {}; CUST = x;
@@ -289,6 +299,11 @@ auth.onAuthStateChanged(u => {
   if (unsubOrders) { unsubOrders(); unsubOrders = null; }
   if (unsubMsgs) { unsubMsgs(); unsubMsgs = null; }
   if (unsubWish) { unsubWish(); unsubWish = null; }
-  $('#in').style.display = 'none'; $('#out').style.display = 'block'; $('#hOut').style.display = 'none';
-  $('#gate').style.display = NEXT_URL ? '' : 'none';
+  $('#boot').style.display = 'none'; $('#in').style.display = 'none'; $('#staffbox').style.display = 'none';
+  $('#out').style.display = 'block'; $('#hOut').style.display = 'none';
+  const want = (location.hash || '').slice(1), g = $('#gate');
+  const why = { orders: 'view your orders', track: 'track your order', inbox: 'see your messages', wishlist: 'see your wishlist', addresses: 'see your addresses', profile: 'see your profile' };
+  if (NEXT_URL) { g.textContent = '🔒 Please log in or create an account to place your order. Your cart is saved and will be waiting for you.'; g.style.display = ''; }
+  else if (why[want]) { g.textContent = '🔒 Please log in to ' + why[want] + '. New here? Create an account below.'; g.style.display = ''; }
+  else g.style.display = 'none';
 });
