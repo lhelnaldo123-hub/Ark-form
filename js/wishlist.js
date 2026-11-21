@@ -32,6 +32,7 @@
 
   async function toggle(id) {
     const u = auth.currentUser;
+    if (u && await isStaff(u)) return toast('Staff preview: wishlist is for customers');
     if (!u) { toast('Please log in to save favourites'); setTimeout(() => { location.href = 'account.html'; }, 1100); return; }
     const was = WISH.has(id);
     was ? WISH.delete(id) : WISH.add(id); paint();
@@ -45,10 +46,10 @@
     e.preventDefault(); e.stopPropagation(); toggle(b.dataset.id);
   }, true);
 
-  auth.onAuthStateChanged(u => {
+  auth.onAuthStateChanged(async u => {
     if (unsub) { unsub(); unsub = null; }
     WISH = new Set(); paint();
-    if (u) unsub = db.collection('customers').doc(u.uid).onSnapshot(s => { WISH = new Set((s.data() || {}).wishlist || []); paint(); }, () => {});
+    if (u && !(await isStaff(u))) unsub = db.collection('customers').doc(u.uid).onSnapshot(s => { WISH = new Set((s.data() || {}).wishlist || []); paint(); }, () => {});
   });
   paint();
 })();
