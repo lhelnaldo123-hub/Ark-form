@@ -1,9 +1,11 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a1830">
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icons/ark-form-center-logo-192.png"><link rel="apple-touch-icon" href="icons/ark-form-center-logo-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ARK Form">
 <title>ARK Form Center</title>
 <link rel="preconnect" href="https://images.unsplash.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/extra.css"></head><body>
 
+<div class="prevbar" id="prevbar" style="display:none">👁 Admin preview - you are viewing the shop as staff. <a href="admin.html">← Back to admin</a></div>
 <div class="strip" id="strip" style="display:none"></div>
 <div class="top">
  <button class="ib" onclick="openMenu()" aria-label="Menu">☰</button>
@@ -21,6 +23,7 @@
 <aside class="dr" id="dr">
  <div class="dh"><b>ARK Form Center</b><button class="ib" style="color:#fff" onclick="closeMenu()" aria-label="Close">✕</button></div>
  <div class="dauth" id="dAuth"><a class="btn sm" href="account.html">Login / Register</a></div>
+ <button class="btn sm" id="installBtn" style="display:none;margin:8px 0 0 14px">📲 Install app</button><p class="tag" id="installTip" style="display:none;margin:6px 14px"></p>
  <h5>Menu</h5><a href="#home">Home</a><a href="#about">About Us</a><a href="#products">All Products</a><a href="#packages">Packages / Deals</a><a href="#offers">Offers &amp; Discounts</a><a href="#faq">FAQs</a><a href="#contact">Contact Us</a><a href="account.html">My Account</a><a href="account.html#wishlist">My Wishlist</a><a href="account.html#orders">My Orders</a><a href="account.html#track">Track Order</a><a href="account.html#inbox">Inbox</a><a href="#cart">My Cart</a>
  <h5>Shop by category</h5><div id="drCats"></div>
  <h5>Policies</h5><a href="#privacy">Privacy Policy</a><a href="#terms">Terms &amp; Conditions</a><a href="#returns">Return / Exchange</a>
@@ -109,4 +112,4 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="js/firebase-config.js"></script><script src="js/app.js"></script><script src="js/site-content.js"></script><script src="js/fx.js"></script><script src="js/shop-account.js"></script><script src="js/wishlist.js"></script></body></html>
+<script src="js/firebase-config.js"></script><script src="js/app.js"></script><script src="js/site-content.js"></script><script src="js/fx.js"></script><script src="js/shop-account.js"></script><script src="js/wishlist.js"></script><script src="js/install.js"></script></body></html>
