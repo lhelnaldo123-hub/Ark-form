@@ -18,7 +18,7 @@ Built with plain **HTML, CSS and JavaScript** and **Firebase** (Authentication +
 | `index.html` | Public website (all public pages are sections routed by `#hash`) |
 | `account.html` | Customer account: profile, My Orders, Track Order, Inbox, Addresses |
 | `admin.html` | Admin panel (staff login) |
-| `manifest.webmanifest`, `sw.js`, `js/install.js`, `icons/` | Install-as-app support (see "Install as an app") |
+| `manifest.webmanifest`, `sw.js`, `js/install.js`, `ark-form-center-logo-*.png` | Install-as-app support (see "Install as an app") |
 | `css/style.css`, `css/extra.css` | Styles (extra.css holds account/tracking/inbox/admin additions) |
 | `js/firebase-config.js` | Firebase project settings |
 | `js/app.js` | Shop: products, categories, cart, coupons, enquiry form, routing, back button |
@@ -34,7 +34,7 @@ Built with plain **HTML, CSS and JavaScript** and **Firebase** (Authentication +
 
 ## Install as an app (PWA)
 
-The site can be installed on a phone or computer like an app. `manifest.webmanifest`, `sw.js`, `js/install.js` and the `icons/` folder make this work; all are already linked from the pages.
+The site can be installed on a phone or computer like an app. `manifest.webmanifest`, `sw.js`, `js/install.js` and the three logo pictures (`ark-form-center-logo-*.png`, kept in the main folder next to `index.html`) make this work; all are already linked from the pages.
 
 * **Android / Chrome:** open the menu (☰) and tap **📲 Install app**, or use the browser menu > Install app.
 * **iPhone / Safari:** tap Share, then **Add to Home Screen**.
@@ -51,6 +51,12 @@ The site can be installed on a phone or computer like an app. `manifest.webmanif
 5. **First administrator** – in Authentication add a user (email + password). Then in Firestore create document `staff/<that user's UID>` with fields: `name` (text), `email` (text), `role` = `Administrator`, `active` = `true`. After that, add more staff from Admin > Staff & Roles.
 6. **Hosting** – upload the folder to GitHub Pages or Firebase Hosting. Add the site domain under Authentication > Settings > Authorized domains.
 7. **Admin first steps** – Settings (delivery fee, tax, payment methods, **return window days**), Site Content (about, FAQs, policies, contact), then add categories, products, packages and offers.
+
+## Who logs in where
+
+* **Customers:** `account.html` (Login / Register). Reached from the 👤 icon and ☰ menu in the shop.
+* **Staff (Administrator, Manager, Support):** `admin.html`. Reached from **Admin Login** in the shop footer, from the "Shop staff? Admin / Staff login" link on the customer login page, or by typing the address. Staff never register themselves; the Administrator creates their accounts in Staff & Roles. A customer account cannot open the admin panel.
+* The admin login page has **Go to site** and **Customer login / Register** buttons. Once logged in, the header link reads **Preview site**.
 
 ## Roles
 
@@ -91,7 +97,7 @@ Dashboard, Products, Categories, Banners, Packages, Offers/Coupons, Orders, Enqu
 
 ## Placeholders – to be supplied by ARK Form Center
 
-The brief says not to invent business details. These are editable placeholders until supplied: shop address, phone/WhatsApp, email, opening hours, map link, social links, About text, FAQs, Privacy Policy, Terms & Conditions, Return/Exchange Policy, final products, images and prices. The 8 sample products (defined in `js/app.js`) appear only while the shop has no products of its own. In Admin > Products, click **Import sample products so I can edit them** to copy them into the database; after that they can be edited, given photos or deleted like any product.
+The brief says not to invent business details. These are editable placeholders until supplied: shop address, phone/WhatsApp, email, opening hours, map link, social links, About text, FAQs, Privacy Policy, Terms & Conditions, Return/Exchange Policy, final products, images and prices. The 8 sample products (defined in `js/app.js`) appear only while the shop has no products of its own. In Admin > Products, click **Import sample products so I can edit them** to copy them into the database; imported samples get simple placeholder pictures (a button adds them to samples that have none); replace them with real photos via Edit. After import they can be edited or deleted like any product.
 
 ## Unfinished / not included (for the Supervisor)
 
