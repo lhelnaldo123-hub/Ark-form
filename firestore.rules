@@ -1,0 +1,99 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function staffRef() { return /databases/$(database)/documents/staff/$(request.auth.uid); }
+    function isStaff() {
+      return signedIn() && exists(staffRef())
+        && get(staffRef()).data.get('active', true) != false
+        && get(staffRef()).data.role in ['Administrator', 'Manager', 'Support'];
+    }
+    function isMgr() { return isStaff() && get(staffRef()).data.role in ['Administrator', 'Manager']; }
+    function isAdmin() { return isStaff() && get(staffRef()).data.role == 'Administrator'; }
+    function custRef() { return /databases/$(database)/documents/customers/$(request.auth.uid); }
+    function custActive() { return !exists(custRef()) || get(custRef()).data.get('active', true) != false; }
+    function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
+
+    match /staff/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    match /products/{id}   { allow read: if true; allow write: if isMgr(); }
+    match /categories/{id} { allow read: if true; allow write: if isMgr(); }
+    match /banners/{id}    { allow read: if true; allow write: if isMgr(); }
+    match /packages/{id}   { allow read: if true; allow write: if isMgr(); }
+
+    match /offers/{id} {
+      allow read: if true;
+      allow write: if isMgr();
+      allow update: if signedIn()
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['used'])
+                    && request.resource.data.used == resource.data.get('used', 0) + 1;
+    }
+
+    match /settings/{id} { allow read: if true; allow write: if isAdmin(); }
+
+    match /orders/{id} {
+      allow create: if signedIn() && custActive()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'Pending'
+        && request.resource.data.payStatus == 'Unpaid'
+        && request.resource.data.total is number;
+      allow read: if isStaff() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow update: if isStaff()
+        || (signedIn() && resource.data.uid == request.auth.uid && (
+              (resource.data.status in ['Pending', 'Confirmed']
+                && request.resource.data.status == 'Cancelled'
+                && request.resource.data.cancelledBy == 'Customer'
+                && changed().hasOnly(['status', 'cancelReason', 'cancelledBy', 'cancelledAt', 'history']))
+              || (resource.data.status in ['Completed', 'Delivered', 'Picked up']
+                && !('returnRequest' in resource.data)
+                && request.resource.data.returnRequest.status == 'Requested'
+                && changed().hasOnly(['returnRequest', 'history']))
+              || changed().hasOnly(['reviewedItems'])
+            ));
+      allow delete: if isAdmin();
+    }
+
+    match /enquiries/{id} {
+      allow create: if request.resource.data.status == 'New'
+        && request.resource.data.name is string && request.resource.data.name.size() < 120
+        && request.resource.data.message is string && request.resource.data.message.size() < 3000;
+      allow read, update: if isStaff();
+      allow delete: if isMgr();
+    }
+
+    match /customers/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isStaff());
+      allow create: if signedIn() && request.auth.uid == uid && !('active' in request.resource.data);
+      allow update: if (signedIn() && request.auth.uid == uid
+                        && request.resource.data.get('active', true) == resource.data.get('active', true))
+                    || isMgr();
+      allow delete: if isAdmin();
+    }
+
+    match /reviews/{id} {
+      allow read: if resource.data.approved == true || isStaff();
+      allow create: if signedIn() && custActive()
+        && request.resource.data.approved == false
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.rating in [1, 2, 3, 4, 5];
+      allow update, delete: if isMgr();
+    }
+
+    match /messages/{id} {
+      allow read: if isStaff() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if isStaff()
+        || (signedIn() && custActive() && request.resource.data.uid == request.auth.uid && request.resource.data.kind == 'received');
+      allow update: if signedIn() && resource.data.uid == request.auth.uid && changed().hasOnly(['read']);
+      allow delete: if false;
+    }
+
+    match /activity/{id} {
+      allow create: if isStaff();
+      allow read: if isAdmin();
+    }
+  }
+}
