@@ -20,6 +20,7 @@ Built with plain **HTML, CSS and JavaScript** and **Firebase** (Authentication +
 | `admin.html` | Admin panel (staff login) |
 | `manifest.webmanifest`, `sw.js`, `js/install.js`, `ark-form-center-logo-*.png` | Install-as-app support (see "Install as an app") |
 | `css/style.css`, `css/extra.css` | Styles (extra.css holds account/tracking/inbox/admin additions) |
+| `js/pwd-eye.js` | Show / hide (eye) button on every password box: customer login and register, admin login, staff creation, change password |
 | `js/firebase-config.js` | Firebase project settings |
 | `js/app.js` | Shop: products, categories, cart, coupons, enquiry form, routing, back button |
 | `js/site-content.js` | Editable home/About/policy text and reviews from the admin |
