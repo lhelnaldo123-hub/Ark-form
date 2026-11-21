@@ -1,0 +1,47 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="ark-form-center-logo-192.png"><link rel="apple-touch-icon" href="ark-form-center-logo-192.png"><meta name="mobile-web-app-capable" content="yes">
+<title>Create Account - ARK Form Center</title><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/extra.css"></head><body>
+<header><b>ARK Form Center</b><div class="hbar"><a href="account.html" onclick="if(history.length>1&&document.referrer){history.back();return false}">← Back</a><a href="index.html">Shop</a></div></header>
+<main>
+<div id="boot" class="card" style="text-align:center">Loading...</div>
+<div id="form" style="display:none">
+ <div class="gate" id="gate" style="display:none">🔒 Create an account to place your order. Your cart is saved and will be waiting for you.</div>
+ <div class="card"><h3 style="margin-top:0">Create your account</h3>
+  <input id="rn" placeholder="Full name" autocomplete="name"><input id="rph" type="tel" placeholder="Phone" autocomplete="tel"><input id="re" type="email" placeholder="Email" autocomplete="email"><input id="rp" type="password" placeholder="Password (min 6)" autocomplete="new-password">
+  <button onclick="register()">Create account</button><p id="rmsg" class="msg"></p></div>
+ <p style="text-align:center;margin-top:16px">Already have an account? <a href="account.html" id="logLink"><b>← Login</b></a></p>
+</div>
+</main>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script>
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.firestore(), auth = firebase.auth(), $ = s => document.querySelector(s);
+const validPhone = v => /^[+()\d\s-]{7,20}$/.test(v) && v.replace(/\D/g, '').length >= 7;
+const NEXT = new URLSearchParams(location.search).get('next') === 'cart', DEST = NEXT ? 'index.html#cart' : 'account.html';
+function msg(t, ok) { const m = $('#rmsg'); m.className = 'msg ' + (ok ? 'ok' : 'err'); m.textContent = t; }
+const fe = e => ({ 'auth/email-already-in-use': 'This email is already registered. Please log in instead.', 'auth/weak-password': 'Password must be at least 6 characters', 'auth/invalid-email': 'Please enter a valid email', 'auth/network-request-failed': 'Network problem. Check your internet' }[e.code] || e.message);
+let REGISTERING = false;
+async function register() {
+  const n = $('#rn').value.trim(), ph = $('#rph').value.trim(), e = $('#re').value.trim(), p = $('#rp').value;
+  if (n.length < 2) return msg('Please enter your full name', 0);
+  if (!validPhone(ph)) return msg('Please enter a valid phone number', 0);
+  if (!/^\S+@\S+\.\S+$/.test(e)) return msg('Please enter a valid email', 0);
+  if (p.length < 6) return msg('Password must be at least 6 characters', 0);
+  REGISTERING = true; msg('Creating your account...', 1);
+  try {
+    const c = await auth.createUserWithEmailAndPassword(e, p);
+    await db.collection('customers').doc(c.user.uid).set({ name: n, phone: ph, email: e, address: '', addresses: [], date: new Date().toISOString() });
+    location.replace(DEST);
+  } catch (x) { REGISTERING = false; msg(fe(x), 0); }
+}
+if (NEXT) { $('#gate').style.display = ''; $('#logLink').href = 'account.html?next=cart'; }
+auth.onAuthStateChanged(u => {
+  if (u) { if (!REGISTERING) location.replace(DEST); return; }
+  $('#boot').style.display = 'none'; $('#form').style.display = 'block';
+});
+</script><script src="js/pwd-eye.js"></script>
+<script>if('serviceWorker' in navigator)addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})});</script>
+</body></html>
