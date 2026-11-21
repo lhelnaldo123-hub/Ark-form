@@ -1,3 +1,4 @@
+
 // ARK Form Center service worker: makes the site installable and keeps the page shell available offline.
 // Network first (so updates and live data always win); the cache is only a fallback when offline.
 const CACHE = 'ark-shell-v3';
