@@ -10,9 +10,7 @@
 <div id="out" style="display:none">
  <div class="gate" id="gate" style="display:none"></div>
  <div class="card"><h3 style="margin-top:0">Login</h3><input id="le" type="email" placeholder="Email"><input id="lp" type="password" placeholder="Password">
- <button onclick="login()">Login</button> <a href="#" onclick="reset();return false">Forgot password?</a><p id="lmsg" class="msg"></p></div><br>
- <div class="card"><h3 style="margin-top:0">Register</h3><input id="rn" placeholder="Full name"><input id="rph" type="tel" placeholder="Phone"><input id="re" type="email" placeholder="Email"><input id="rp" type="password" placeholder="Password (min 6)">
- <button onclick="register()">Create account</button><p id="rmsg" class="msg"></p></div>
+ <button onclick="login()">Login</button> <a href="#" onclick="reset();return false">Forgot password?</a><p id="lmsg" class="msg"></p></div><p style="text-align:center;margin-top:16px">New customer? <a href="register.html" id="regLink"><b>Create an account →</b></a></p>
  <p class="tag" style="text-align:center;margin-top:14px">Shop staff? <a href="admin.html">Admin / Staff login →</a></p>
 </div>
 
@@ -63,4 +61,4 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="js/firebase-config.js"></script><script src="js/account.js"></script><script src="js/pwd-eye.js"></script>
-</body></html>
+<script>if('serviceWorker' in navigator)addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})});</script></body></html>
